@@ -75,24 +75,29 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onAva
   }
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0, 0, 0, 0.75)',
-      backdropFilter: 'blur(8px)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 10000,
-      padding: '20px'
-    }}>
-      <div className="card glass-card p-5" style={{
-        width: '100%',
-        maxWidth: '420px',
-        position: 'relative',
-        animation: 'scaleUp 0.3s ease-out',
-        textAlign: 'center',
-      }}>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0, 0, 0, 0.75)',
+        backdropFilter: 'blur(8px)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10000,
+        padding: '20px',
+      }}
+    >
+      <div
+        className="card glass-card p-5"
+        style={{
+          width: '100%',
+          maxWidth: '420px',
+          position: 'relative',
+          animation: 'scaleUp 0.3s ease-out',
+          textAlign: 'center',
+        }}
+      >
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -106,10 +111,10 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onAva
             fontSize: '1.2rem',
             cursor: 'pointer',
             opacity: 0.7,
-            transition: 'opacity 0.2s'
+            transition: 'opacity 0.2s',
           }}
-          onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-          onMouseLeave={(e) => e.currentTarget.style.opacity = '0.7'}
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
         >
           ❌
         </button>
@@ -120,21 +125,23 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onAva
 
         {/* Large Avatar Preview with upload button overlay */}
         <div style={{ display: 'inline-block', position: 'relative', marginBottom: '16px' }}>
-          <div style={{
-            width: '100px',
-            height: '100px',
-            borderRadius: '50%',
-            overflow: 'hidden',
-            background: '#6366f1',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            fontSize: '2rem',
-            fontWeight: '700',
-            color: '#fff',
-            border: '3px solid rgba(255,255,255,0.1)',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
-          }}>
+          <div
+            style={{
+              width: '100px',
+              height: '100px',
+              borderRadius: '50%',
+              overflow: 'hidden',
+              background: '#6366f1',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              fontSize: '2rem',
+              fontWeight: '700',
+              color: '#fff',
+              border: '3px solid rgba(255,255,255,0.1)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+            }}
+          >
             {user.avatarUrl ? (
               <img
                 src={user.avatarUrl}
@@ -165,7 +172,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onAva
               color: '#fff',
               fontSize: '0.9rem',
               boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-              transition: 'background-color 0.2s'
+              transition: 'background-color 0.2s',
             }}
             title="Upload new photo"
           >
@@ -189,7 +196,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onAva
         </p>
 
         {/* Action buttons */}
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '20px' }}>
+        <div
+          style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '20px' }}
+        >
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={loading}
@@ -209,7 +218,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onAva
                 fontSize: '0.85rem',
                 minHeight: '36px',
                 color: '#f87171',
-                borderColor: 'rgba(248, 113, 113, 0.2)'
+                borderColor: 'rgba(248, 113, 113, 0.2)',
               }}
             >
               Remove
@@ -224,26 +233,30 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onAva
           </div>
         )}
         {error && (
-          <div style={{
-            fontSize: '0.85rem',
-            color: '#f87171',
-            background: 'rgba(248, 113, 113, 0.1)',
-            padding: '8px 12px',
-            borderRadius: 'var(--radius-md)',
-            margin: '10px 0'
-          }}>
+          <div
+            style={{
+              fontSize: '0.85rem',
+              color: '#f87171',
+              background: 'rgba(248, 113, 113, 0.1)',
+              padding: '8px 12px',
+              borderRadius: 'var(--radius-md)',
+              margin: '10px 0',
+            }}
+          >
             ⚠️ {error}
           </div>
         )}
         {success && (
-          <div style={{
-            fontSize: '0.85rem',
-            color: '#4ade80',
-            background: 'rgba(74, 222, 128, 0.1)',
-            padding: '8px 12px',
-            borderRadius: 'var(--radius-md)',
-            margin: '10px 0'
-          }}>
+          <div
+            style={{
+              fontSize: '0.85rem',
+              color: '#4ade80',
+              background: 'rgba(74, 222, 128, 0.1)',
+              padding: '8px 12px',
+              borderRadius: 'var(--radius-md)',
+              margin: '10px 0',
+            }}
+          >
             ✓ {success}
           </div>
         )}

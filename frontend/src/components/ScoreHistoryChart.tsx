@@ -82,7 +82,12 @@ export const ScoreHistoryChart: React.FC<ScoreHistoryChartProps> = ({ entries })
         <LineChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#444" vertical={false} />
           <XAxis dataKey="dateLabel" stroke="#888" fontSize={11} tickMargin={8} minTickGap={15} />
-          <YAxis domain={[0, 100]} stroke="#888" fontSize={11} tickFormatter={(val: number) => `${val}`} />
+          <YAxis
+            domain={[0, 100]}
+            stroke="#888"
+            fontSize={11}
+            tickFormatter={(val: number) => `${val}`}
+          />
           <Tooltip content={<CustomTooltip />} />
           <Line
             type="monotone"

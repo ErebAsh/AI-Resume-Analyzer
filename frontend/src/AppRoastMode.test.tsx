@@ -74,9 +74,10 @@ describe('Resume Roast Mode (#497)', () => {
       'fetch',
       vi.fn().mockResolvedValue({
         ok: true,
-        blob: async () => new Blob([new Uint8Array([0x25, 0x50, 0x44, 0x46])], {
-          type: 'application/pdf',
-        }),
+        blob: async () =>
+          new Blob([new Uint8Array([0x25, 0x50, 0x44, 0x46])], {
+            type: 'application/pdf',
+          }),
       })
     )
     // App reports failures with window.alert, which jsdom does not implement.

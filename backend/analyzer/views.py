@@ -2119,3 +2119,19 @@ def send_new_device_login_alert(user, ip, device_info):
         recipient_list=[user.email],
         fail_silently=False,
     )
+
+from rest_framework import viewsets
+from .serializers import ResumeAnalysisListSerializer
+
+class UserDashboardViewSet(viewsets.ModelViewSet):
+    serializer_class = ResumeAnalysisListSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return ResumeAnalysis.objects.filter(user=self.request.user).order_by('created_at')
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+

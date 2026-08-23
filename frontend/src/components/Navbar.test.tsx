@@ -16,7 +16,6 @@ const defaultProps = {
   user: null,
   onLogin: vi.fn(),
   onLogout: vi.fn(),
-
 }
 
 const renderNavbar = (
@@ -62,7 +61,6 @@ describe('Navbar Component right-side cluster (#244)', () => {
           user={null}
           onLogin={() => {}}
           onLogout={() => {}}
-
         />
       </MemoryRouter>
     )
@@ -86,7 +84,6 @@ describe('Navbar Component right-side cluster (#244)', () => {
           user={user}
           onLogin={() => {}}
           onLogout={() => {}}
-
         />
       </MemoryRouter>
     )
@@ -106,7 +103,6 @@ describe('Navbar responsive hamburger (#245)', () => {
           user={null}
           onLogin={() => {}}
           onLogout={() => {}}
-
         />
       </MemoryRouter>
     )
@@ -126,7 +122,6 @@ describe('Navbar responsive hamburger (#245)', () => {
           user={null}
           onLogin={() => {}}
           onLogout={() => {}}
-
         />
       </MemoryRouter>
     )

@@ -22,7 +22,9 @@ describe('Job Description Draft Auto-Save (#533)', () => {
       </MemoryRouter>
     )
 
-    const textarea = screen.getByPlaceholderText(/Paste job description text here/i) as HTMLTextAreaElement
+    const textarea = screen.getByPlaceholderText(
+      /Paste job description text here/i
+    ) as HTMLTextAreaElement
     expect(textarea.value).toBe('Senior React Developer with TypeScript experience')
   })
 
@@ -68,7 +70,9 @@ describe('Job Description Draft Auto-Save (#533)', () => {
     })
 
     expect(localStorage.getItem('jd_draft')).toBeNull()
-    const textarea = screen.getByPlaceholderText(/Paste job description text here/i) as HTMLTextAreaElement
+    const textarea = screen.getByPlaceholderText(
+      /Paste job description text here/i
+    ) as HTMLTextAreaElement
     expect(textarea.value).toBe('')
   })
 

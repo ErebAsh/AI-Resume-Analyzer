@@ -51,11 +51,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <header className="navbar">
-      <Link
-        to="/"
-        className={`navbar-brand ${theme}`}
-        onClick={closeMenu}
-      >
+      <Link to="/" className={`navbar-brand ${theme}`} onClick={closeMenu}>
         🚀 AI Resume Analyzer
       </Link>
       <button
@@ -143,7 +139,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           {user ? (
-            <div className="navbar-user" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div
+              className="navbar-user"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
               <button
                 type="button"
                 onClick={() => onProfileClick?.()}

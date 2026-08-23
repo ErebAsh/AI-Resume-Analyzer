@@ -46,11 +46,7 @@ export const WhatsNewModal: React.FC<WhatsNewModalProps> = ({
   }
 
   return (
-    <div
-      className="whats-new-overlay"
-      onClick={handleDismiss}
-      data-testid="whats-new-overlay"
-    >
+    <div className="whats-new-overlay" onClick={handleDismiss} data-testid="whats-new-overlay">
       <div
         className="whats-new-modal"
         role="dialog"
