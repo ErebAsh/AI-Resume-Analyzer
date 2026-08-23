@@ -1,5 +1,5 @@
 import React from 'react';
-import { ResumeData } from './BuilderPage';
+import type { ResumeData } from './BuilderPage';
 
 interface Props {
   resumeData: ResumeData;
