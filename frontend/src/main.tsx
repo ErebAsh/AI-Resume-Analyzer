@@ -51,6 +51,7 @@ import { Routes, Route } from 'react-router-dom'
 import { TermsOfService } from './pages/TermsOfService'
 import { ProfilePage } from './components/ProfilePage'
 import { BuilderPage } from './pages/Builder/BuilderPage'
+import { RecruiterDashboard } from './pages/Recruiter/RecruiterDashboard'
 
 
 createRoot(document.getElementById('root')!).render(
@@ -59,6 +60,7 @@ createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <Routes>
           <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/recruiter" element={<RecruiterDashboard />} />
           <Route path="/*" element={<App />} />
           <Route path="/builder" element={<BuilderPage />} />
           <Route path="/docs" element={<ApiDocs />} />
