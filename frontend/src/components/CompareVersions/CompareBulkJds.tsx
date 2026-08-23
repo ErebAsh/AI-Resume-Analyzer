@@ -50,7 +50,7 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
   React.useEffect(() => {
     const timer = setTimeout(() => {
       try {
-        const hasContent = jds.some(j => j && j.trim())
+        const hasContent = jds.some((j) => j && j.trim())
         if (hasContent) {
           localStorage.setItem(BULK_JD_DRAFT_KEY, JSON.stringify(jds))
         } else {
@@ -84,7 +84,7 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
   }
 
   const handleCompare = async () => {
-    const validJds = jds.map(jd => jd.trim()).filter(Boolean)
+    const validJds = jds.map((jd) => jd.trim()).filter(Boolean)
     if (!file && !resumeUrl.trim()) {
       setError('Please provide a resume file or URL.')
       return
@@ -155,8 +155,17 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
         style={{ width: '840px', maxHeight: '90vh', overflowY: 'auto' }}
       >
         <div className="compare-modal__header">
-          <h3 style={{ fontSize: '20px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <GitCompare size={22} style={{ color: 'var(--color-primary, #6366f1)' }} /> Bulk Job Description Comparison
+          <h3
+            style={{
+              fontSize: '20px',
+              fontWeight: '700',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
+            <GitCompare size={22} style={{ color: 'var(--color-primary, #6366f1)' }} /> Bulk Job
+            Description Comparison
           </h3>
           <button className="compare-close-btn" onClick={onClose} aria-label="Close">
             <X size={20} />
@@ -166,15 +175,36 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
         {!results ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '16px' }}>
             <p style={{ fontSize: '14.5px', opacity: 0.85, margin: 0 }}>
-              Compare a single resume against multiple job descriptions side-by-side to find the best match and missing skills.
+              Compare a single resume against multiple job descriptions side-by-side to find the
+              best match and missing skills.
             </p>
 
             {/* Resume Upload / Input */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(255, 255, 255, 0.02)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                background: 'rgba(255, 255, 255, 0.02)',
+                padding: '16px',
+                borderRadius: '8px',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+              }}
+            >
               <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '600' }}>1. Choose Resume</h4>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
-                <div style={{ flex: 1, minWidth: '250px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: '600', opacity: 0.8 }}>Upload Resume File</label>
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: '250px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                  }}
+                >
+                  <label style={{ fontSize: '12px', fontWeight: '600', opacity: 0.8 }}>
+                    Upload Resume File
+                  </label>
                   <input
                     type="file"
                     accept=".pdf,.doc,.docx,.txt"
@@ -188,12 +218,22 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
                       borderRadius: '6px',
                       background: 'rgba(255, 255, 255, 0.01)',
                       color: 'inherit',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
                     }}
                   />
                 </div>
-                <div style={{ flex: 1, minWidth: '250px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: '600', opacity: 0.8 }}>Or Resume URL</label>
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: '250px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                  }}
+                >
+                  <label style={{ fontSize: '12px', fontWeight: '600', opacity: 0.8 }}>
+                    Or Resume URL
+                  </label>
                   <input
                     type="text"
                     placeholder="https://drive.google.com/..."
@@ -207,7 +247,7 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
                       border: '1px solid rgba(255, 255, 255, 0.1)',
                       borderRadius: '6px',
                       background: 'rgba(255, 255, 255, 0.03)',
-                      color: 'inherit'
+                      color: 'inherit',
                     }}
                   />
                 </div>
@@ -216,8 +256,12 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
 
             {/* JDs List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '600' }}>2. Job Descriptions ({jds.length}/5)</h4>
+              <div
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
+                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '600' }}>
+                  2. Job Descriptions ({jds.length}/5)
+                </h4>
                 <button
                   className="app-btn"
                   onClick={handleAddJd}
@@ -245,7 +289,7 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
                           background: 'rgba(255, 255, 255, 0.02)',
                           color: 'inherit',
                           fontSize: '13.5px',
-                          resize: 'vertical'
+                          resize: 'vertical',
                         }}
                       />
                     </div>
@@ -259,7 +303,7 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
                           padding: '8px',
                           borderRadius: '6px',
                           cursor: 'pointer',
-                          marginTop: '4px'
+                          marginTop: '4px',
                         }}
                         title="Remove"
                       >
@@ -271,7 +315,11 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
               </div>
             </div>
 
-            {error && <div style={{ color: '#ef4444', fontSize: '14px', fontWeight: '500' }}>⚠️ {error}</div>}
+            {error && (
+              <div style={{ color: '#ef4444', fontSize: '14px', fontWeight: '500' }}>
+                ⚠️ {error}
+              </div>
+            )}
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
               <button
@@ -288,12 +336,29 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
         ) : (
           <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {/* Resume Skills Panel */}
-            <div style={{ background: 'rgba(255, 255, 255, 0.02)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-              <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', textTransform: 'uppercase', opacity: 0.75, letterSpacing: '0.04em' }}>
+            <div
+              style={{
+                background: 'rgba(255, 255, 255, 0.02)',
+                padding: '16px',
+                borderRadius: '8px',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+              }}
+            >
+              <h4
+                style={{
+                  margin: '0 0 10px 0',
+                  fontSize: '14px',
+                  textTransform: 'uppercase',
+                  opacity: 0.75,
+                  letterSpacing: '0.04em',
+                }}
+              >
                 Skills Found in Resume
               </h4>
               {results.resume_skills.length === 0 ? (
-                <p style={{ margin: 0, opacity: 0.5, fontSize: '13px' }}>No skills detected in your resume.</p>
+                <p style={{ margin: 0, opacity: 0.5, fontSize: '13px' }}>
+                  No skills detected in your resume.
+                </p>
               ) : (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                   {results.resume_skills.map((skill) => (
@@ -305,7 +370,7 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
                         fontSize: '12px',
                         borderRadius: '4px',
                         background: 'rgba(255, 255, 255, 0.1)',
-                        color: 'inherit'
+                        color: 'inherit',
                       }}
                     >
                       {skill}
@@ -317,17 +382,21 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
 
             {/* Comparisons List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>Match Results (Sorted by Best Match)</h4>
-              
+              <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '600' }}>
+                Match Results (Sorted by Best Match)
+              </h4>
+
               {results.comparisons.map((item, idx) => {
                 const isExpanded = expandedJds[idx]
-                const jdSnippet = item.job_description.length > 120 
-                  ? item.job_description.slice(0, 120) + '...'
-                  : item.job_description
+                const jdSnippet =
+                  item.job_description.length > 120
+                    ? item.job_description.slice(0, 120) + '...'
+                    : item.job_description
 
                 // Determine score color
                 let scoreColor = '#ef4444' // red
-                if (item.score >= 70) scoreColor = '#22c55e' // green
+                if (item.score >= 70)
+                  scoreColor = '#22c55e' // green
                 else if (item.score >= 40) scoreColor = '#eab308' // yellow
 
                 return (
@@ -340,13 +409,28 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
                       padding: '16px',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '12px'
+                      gap: '12px',
                     }}
                   >
                     {/* Header Row */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: '10px',
+                      }}
+                    >
                       <div style={{ flex: 1, minWidth: '200px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--color-primary, #6366f1)', textTransform: 'uppercase' }}>
+                        <span
+                          style={{
+                            fontSize: '12px',
+                            fontWeight: '700',
+                            color: 'var(--color-primary, #6366f1)',
+                            textTransform: 'uppercase',
+                          }}
+                        >
                           Role Option #{idx + 1}
                         </span>
                         <div
@@ -357,13 +441,20 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
                             opacity: 0.9,
                             fontStyle: 'italic',
                             marginTop: '4px',
-                            lineHeight: '1.4'
+                            lineHeight: '1.4',
                           }}
                           title="Click to view full job description"
                         >
                           "{isExpanded ? item.job_description : jdSnippet}"
                           {item.job_description.length > 120 && (
-                            <span style={{ color: 'var(--color-primary, #6366f1)', marginLeft: '6px', fontSize: '12px', fontWeight: '600' }}>
+                            <span
+                              style={{
+                                color: 'var(--color-primary, #6366f1)',
+                                marginLeft: '6px',
+                                fontSize: '12px',
+                                fontWeight: '600',
+                              }}
+                            >
                               {isExpanded ? 'Show Less' : 'Show More'}
                             </span>
                           )}
@@ -382,7 +473,7 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
                             fontSize: '15px',
                             fontWeight: '700',
                             color: scoreColor,
-                            background: 'rgba(0, 0, 0, 0.1)'
+                            background: 'rgba(0, 0, 0, 0.1)',
                           }}
                         >
                           {item.score}%
@@ -391,10 +482,26 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
                     </div>
 
                     {/* Skills Grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '4px' }}>
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '16px',
+                        marginTop: '4px',
+                      }}
+                    >
                       {/* Matched */}
                       <div>
-                        <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#22c55e', display: 'block', marginBottom: '6px' }}>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            textTransform: 'uppercase',
+                            color: '#22c55e',
+                            display: 'block',
+                            marginBottom: '6px',
+                          }}
+                        >
                           Matched Skills ({item.matched_skills.length})
                         </span>
                         {item.matched_skills.length === 0 ? (
@@ -410,7 +517,7 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
                                   borderRadius: '3px',
                                   background: 'rgba(34, 197, 94, 0.15)',
                                   color: '#22c55e',
-                                  border: '1px solid rgba(34, 197, 94, 0.2)'
+                                  border: '1px solid rgba(34, 197, 94, 0.2)',
                                 }}
                               >
                                 {s}
@@ -422,7 +529,16 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
 
                       {/* Missing */}
                       <div>
-                        <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#ef4444', display: 'block', marginBottom: '6px' }}>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            textTransform: 'uppercase',
+                            color: '#ef4444',
+                            display: 'block',
+                            marginBottom: '6px',
+                          }}
+                        >
                           Missing Skills ({item.missing_skills.length})
                         </span>
                         {item.missing_skills.length === 0 ? (
@@ -438,7 +554,7 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
                                   borderRadius: '3px',
                                   background: 'rgba(239, 68, 68, 0.15)',
                                   color: '#ef4444',
-                                  border: '1px solid rgba(239, 68, 68, 0.2)'
+                                  border: '1px solid rgba(239, 68, 68, 0.2)',
                                 }}
                               >
                                 {s}
@@ -451,11 +567,35 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
 
                     {/* Suggestions */}
                     {item.suggestions.length > 0 && (
-                      <div style={{ marginTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '10px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: '600', opacity: 0.8, display: 'block', marginBottom: '4px' }}>
+                      <div
+                        style={{
+                          marginTop: '8px',
+                          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+                          paddingTop: '10px',
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            opacity: 0.8,
+                            display: 'block',
+                            marginBottom: '4px',
+                          }}
+                        >
                           Recommendations:
                         </span>
-                        <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '12.5px', opacity: 0.85, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <ul
+                          style={{
+                            margin: 0,
+                            paddingLeft: '16px',
+                            fontSize: '12.5px',
+                            opacity: 0.85,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '3px',
+                          }}
+                        >
                           {item.suggestions.slice(0, 3).map((sug, i) => (
                             <li key={i}>{sug}</li>
                           ))}
@@ -467,7 +607,16 @@ export const CompareBulkJds: React.FC<CompareBulkJdsProps> = ({ onClose }) => {
               })}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', flexWrap: 'wrap', gap: '10px' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginTop: '12px',
+                flexWrap: 'wrap',
+                gap: '10px',
+              }}
+            >
               <button
                 className="app-btn app-btn--secondary"
                 onClick={() => {

@@ -81,7 +81,8 @@ MONTHS = {
 
 #: Words that mean "still there". ``to date`` is included because it is common
 #: and is otherwise parsed as a stray preposition.
-PRESENT_WORDS = ("present", "current", "currently", "now", "ongoing", "to date", "today")
+PRESENT_WORDS = ("present", "current", "currently",
+                 "now", "ongoing", "to date", "today")
 
 #: Separators between the two ends of a range: hyphen, en dash, em dash,
 #: "to", "until", "through". Written out rather than as a character class so the
@@ -98,6 +99,7 @@ MAX_YEAR = 2100
 _YEAR = r"(?:19\d{2}|20\d{2}|21\d{2})"
 
 _MONTH_NAMES = "|".join(sorted(MONTHS, key=len, reverse=True))
+
 
 def _endpoint(prefix):
     """Return an alternation matching one end of a range, with named groups.
@@ -524,7 +526,8 @@ def analyse(text, experience_level="", today=None) -> Timeline:
     # far-future range would poison the gap and total-experience arithmetic that
     # follows.
     usable = []
-    future_cutoff = today.year * 12 + (today.month - 1) + FUTURE_TOLERANCE_MONTHS
+    future_cutoff = today.year * 12 + \
+        (today.month - 1) + FUTURE_TOLERANCE_MONTHS
 
     for r in ranges:
         if not r.is_current and r.end_index(today) < r.start_index():
@@ -558,7 +561,8 @@ def analyse(text, experience_level="", today=None) -> Timeline:
 
         usable.append(r)
 
-    ordered = sorted(usable, key=lambda r: (r.start_index(), r.end_index(today)))
+    ordered = sorted(usable, key=lambda r: (
+        r.start_index(), r.end_index(today)))
 
     # --- Gaps and overlaps ------------------------------------------------
     largest_gap = 0

@@ -85,7 +85,8 @@ class FrontendRouteContractTests(TestCase):
 
     def test_the_avatar_endpoint_is_routed(self):
         """The specific gap: a view that existed, was imported, and was never published."""
-        self.assertEqual(resolve("/api/profile/avatar/").url_name, "profile_avatar")
+        self.assertEqual(
+            resolve("/api/profile/avatar/").url_name, "profile_avatar")
 
     def test_the_share_endpoint_is_not_under_an_analyzer_prefix(self):
         """`analyzer.urls` is included under `api/`, so `api/analyzer/` is not a thing.
@@ -121,7 +122,8 @@ class FrontendRouteContractTests(TestCase):
             if isinstance(node, ast.ImportFrom) and (node.module or "").startswith(
                 ("views", ".views", "analyzer.views")
             ):
-                imported.update(alias.asname or alias.name for alias in node.names)
+                imported.update(
+                    alias.asname or alias.name for alias in node.names)
 
         # `path(..., some_view)` and `path(..., SomeView.as_view())`.
         routed = set()
@@ -169,11 +171,13 @@ class ProfileAvatarEndpointTests(TestCase):
 
     def test_upload_requires_authentication(self):
         self.client.force_authenticate(user=None)
-        resp = self.client.post("/api/profile/avatar/", {"avatar": self._png()})
+        resp = self.client.post("/api/profile/avatar/",
+                                {"avatar": self._png()})
         self.assertEqual(resp.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_upload_returns_a_url_and_persists_it(self):
-        resp = self.client.post("/api/profile/avatar/", {"avatar": self._png()})
+        resp = self.client.post("/api/profile/avatar/",
+                                {"avatar": self._png()})
 
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertIsNotNone(resp.data["avatar_url"])
@@ -187,7 +191,8 @@ class ProfileAvatarEndpointTests(TestCase):
         self.assertIn("error", resp.data)
 
     def test_a_disallowed_extension_is_rejected(self):
-        bad = SimpleUploadedFile("avatar.txt", b"not an image", content_type="text/plain")
+        bad = SimpleUploadedFile(
+            "avatar.txt", b"not an image", content_type="text/plain")
         resp = self.client.post("/api/profile/avatar/", {"avatar": bad})
 
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
@@ -217,7 +222,8 @@ class ProfileAvatarEndpointTests(TestCase):
     def test_one_user_cannot_touch_another_users_avatar(self):
         """There is no id in the path, so this is really a check that the view
         keys off request.user rather than anything the caller supplies."""
-        other = User.objects.create_user(username="someoneelse", password="password123")
+        other = User.objects.create_user(
+            username="someoneelse", password="password123")
         UserProfile.objects.get_or_create(user=other)
 
         self.client.post("/api/profile/avatar/", {"avatar": self._png()})
@@ -229,7 +235,8 @@ class ProfileAvatarEndpointTests(TestCase):
 class SharedResultEndpointTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = User.objects.create_user(username="sharer", password="password123")
+        self.user = User.objects.create_user(
+            username="sharer", password="password123")
 
     def _analysis(self, shared=True):
         """Create an analysis, published by default.
@@ -276,5 +283,6 @@ class SharedResultEndpointTests(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_an_unknown_share_id_is_a_404(self):
-        resp = self.client.get("/api/shared/2b0c9a1e-5f3d-4a7b-9c2e-8d1f0a6b4c33/")
+        resp = self.client.get(
+            "/api/shared/2b0c9a1e-5f3d-4a7b-9c2e-8d1f0a6b4c33/")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)

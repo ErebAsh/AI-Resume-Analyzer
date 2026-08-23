@@ -162,7 +162,9 @@ describe('ProfilePage', () => {
     fireEvent.click(screen.getByRole('button', { name: /edit profile/i }))
 
     fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'updateduser' } })
-    fireEvent.change(screen.getByLabelText('Email Address'), { target: { value: 'updated@example.com' } })
+    fireEvent.change(screen.getByLabelText('Email Address'), {
+      target: { value: 'updated@example.com' },
+    })
     fireEvent.click(screen.getByRole('switch', { name: /weekly resume-tips email digest/i }))
     fireEvent.click(screen.getByRole('button', { name: /save changes/i }))
 
@@ -178,7 +180,11 @@ describe('ProfilePage', () => {
       weekly_digest_opt_in: true,
     })
 
-    await waitFor(() => expect(screen.getByText('Profile and notification preferences updated successfully!')).toBeInTheDocument())
+    await waitFor(() =>
+      expect(
+        screen.getByText('Profile and notification preferences updated successfully!')
+      ).toBeInTheDocument()
+    )
     expect(screen.getByDisplayValue('updateduser')).toBeInTheDocument()
     expect(screen.getByDisplayValue('updated@example.com')).toBeInTheDocument()
     expect(mockUpdateProfileSession).toHaveBeenCalledWith('updateduser')
@@ -226,7 +232,9 @@ describe('ProfilePage', () => {
     await waitFor(() => expect(screen.getByDisplayValue('testuser')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: /edit profile/i }))
     fireEvent.change(screen.getByLabelText('Username'), { target: { value: 'changeduser' } })
-    fireEvent.change(screen.getByLabelText('Email Address'), { target: { value: 'changed@example.com' } })
+    fireEvent.change(screen.getByLabelText('Email Address'), {
+      target: { value: 'changed@example.com' },
+    })
     fireEvent.click(screen.getByRole('button', { name: /cancel/i }))
 
     expect(screen.getByDisplayValue('testuser')).toBeInTheDocument()

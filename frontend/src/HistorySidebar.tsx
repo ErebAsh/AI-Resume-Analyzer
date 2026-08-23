@@ -5,7 +5,7 @@ import { ScoreHistoryChart } from './components/ScoreHistoryChart'
 import { downloadBulkReportsZip, type BulkReportItem } from './utils/exportZipReports'
 const PAGE_SIZE = 10
 
-type SortMode = "recent" | "most-matched" | "most-missing";
+type SortMode = 'recent' | 'most-matched' | 'most-missing'
 
 interface HistorySidebarProps {
   entries: AnalysisEntry[]
@@ -25,7 +25,7 @@ interface HistorySidebarProps {
   onLoadMoreFromServer?: () => Promise<void> | void
 }
 
-const SORT_MODE_STORAGE_KEY = "history_sort_mode";
+const SORT_MODE_STORAGE_KEY = 'history_sort_mode'
 
 export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   entries,
@@ -42,29 +42,29 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   hasMoreOnServer = false,
   onLoadMoreFromServer,
 }) => {
-  const [confirmClear, setConfirmClear] = useState(false);
-  const [downloadingZip, setDownloadingZip] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const prevIsOpen = useRef(isOpen);
+  const [confirmClear, setConfirmClear] = useState(false)
+  const [downloadingZip, setDownloadingZip] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const prevIsOpen = useRef(isOpen)
 
   useEffect(() => {
     if (prevIsOpen.current && !isOpen) {
-      triggerRef.current?.focus();
+      triggerRef.current?.focus()
     }
-    prevIsOpen.current = isOpen;
-  }, [isOpen]);
+    prevIsOpen.current = isOpen
+  }, [isOpen])
 
   const [sortMode, setSortMode] = useState<SortMode>(() => {
     try {
-      const saved = localStorage.getItem(SORT_MODE_STORAGE_KEY);
-      if (saved === "recent" || saved === "most-matched" || saved === "most-missing") {
-        return saved;
+      const saved = localStorage.getItem(SORT_MODE_STORAGE_KEY)
+      if (saved === 'recent' || saved === 'most-matched' || saved === 'most-missing') {
+        return saved
       }
     } catch {
       // localStorage may be unavailable
     }
-    return "recent";
-  });
+    return 'recent'
+  })
 
   const handleDownloadHistoryZip = async () => {
     if (entries.length === 0) return
@@ -91,11 +91,11 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   // Persist sort mode to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(SORT_MODE_STORAGE_KEY, sortMode);
+      localStorage.setItem(SORT_MODE_STORAGE_KEY, sortMode)
     } catch {
       // localStorage may be unavailable
     }
-  }, [sortMode]);
+  }, [sortMode])
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
 
@@ -165,17 +165,17 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
 
   // Sort entries based on current sort mode
   const sortedEntries = React.useMemo(() => {
-    const entriesCopy = [...entries];
+    const entriesCopy = [...entries]
     switch (sortMode) {
-      case "most-matched":
-        return entriesCopy.sort((a, b) => b.matchedSkills.length - a.matchedSkills.length);
-      case "most-missing":
-        return entriesCopy.sort((a, b) => b.missingSkills.length - a.missingSkills.length);
-      case "recent":
+      case 'most-matched':
+        return entriesCopy.sort((a, b) => b.matchedSkills.length - a.matchedSkills.length)
+      case 'most-missing':
+        return entriesCopy.sort((a, b) => b.missingSkills.length - a.missingSkills.length)
+      case 'recent':
       default:
-        return entriesCopy.sort((a, b) => b.timestamp - a.timestamp);
+        return entriesCopy.sort((a, b) => b.timestamp - a.timestamp)
     }
-  }, [entries, sortMode]);
+  }, [entries, sortMode])
 
   return (
     <>
@@ -226,7 +226,10 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                 onClick={handleDownloadHistoryZip}
                 disabled={downloadingZip}
                 title="Download all history reports as ZIP"
-                style={{ background: 'rgba(99, 102, 241, 0.15)', borderColor: 'rgba(99, 102, 241, 0.3)' }}
+                style={{
+                  background: 'rgba(99, 102, 241, 0.15)',
+                  borderColor: 'rgba(99, 102, 241, 0.3)',
+                }}
               >
                 <Archive size={14} /> ZIP
               </button>
@@ -277,22 +280,22 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
         {entries.length > 0 && (
           <div className="history-sort-controls">
             <button
-              className={`history-sort-btn ${sortMode === "recent" ? "history-sort-btn--active" : ""}`}
-              onClick={() => setSortMode("recent")}
+              className={`history-sort-btn ${sortMode === 'recent' ? 'history-sort-btn--active' : ''}`}
+              onClick={() => setSortMode('recent')}
               title="Sort by most recent"
             >
               Recent
             </button>
             <button
-              className={`history-sort-btn ${sortMode === "most-matched" ? "history-sort-btn--active" : ""}`}
-              onClick={() => setSortMode("most-matched")}
+              className={`history-sort-btn ${sortMode === 'most-matched' ? 'history-sort-btn--active' : ''}`}
+              onClick={() => setSortMode('most-matched')}
               title="Sort by most matched skills"
             >
               Most Matched
             </button>
             <button
-              className={`history-sort-btn ${sortMode === "most-missing" ? "history-sort-btn--active" : ""}`}
-              onClick={() => setSortMode("most-missing")}
+              className={`history-sort-btn ${sortMode === 'most-missing' ? 'history-sort-btn--active' : ''}`}
+              onClick={() => setSortMode('most-missing')}
               title="Sort by most missing skills"
             >
               Most Missing
@@ -347,7 +350,8 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                       </button>
                     </div>
                     <div className="history-item-role">
-                      {entry.targetRole}{entry.experienceLevel ? ` • ${entry.experienceLevel}` : ''}
+                      {entry.targetRole}
+                      {entry.experienceLevel ? ` • ${entry.experienceLevel}` : ''}
                     </div>
                     <div className="history-item-file">{entry.fileName}</div>
                     <div className="history-item-time">{formatDate(entry.timestamp)}</div>

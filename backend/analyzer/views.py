@@ -1,3 +1,29 @@
+from .models import BatchUpload
+from collections import Counter
+from rest_framework.decorators import parser_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.parsers import MultiPartParser, FormParser
+from .tasks import process_batch_upload
+import requests
+from .serializers import WebhookSerializer
+from .unsubscribe_tokens import read_unsubscribe_token
+from .serializers import CustomTokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
+import re
+from rest_framework.throttling import AnonRateThrottle
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.contrib.auth.password_validation import validate_password
+from .serializers import SuggestionFeedbackSerializer
+from .models import SuggestionFeedback
+from .serializers import ResumeAnalysisListSerializer
+from .file_validation import (
+    PDF,
+    RESUME_FORMATS,
+    detect_format,
+    get_max_upload_size,
+    validate_optional_upload,
+    validate_upload,
+)
 import logging
 import os
 import uuid
@@ -89,6 +115,7 @@ logger = logging.getLogger(__name__)
 
 class UploadRateThrottle(SimpleRateThrottle):
     scope = "upload"
+
     def get_rate(self):
         return getattr(settings, "RESUME_UPLOAD_RATE", "10/hour")
 
@@ -147,15 +174,6 @@ def verify_captcha_token(token_string):
     return False
 
 
-from .file_validation import (
-    PDF,
-    RESUME_FORMATS,
-    detect_format,
-    get_max_upload_size,
-    validate_optional_upload,
-    validate_upload,
-)
-
 MAX_UPLOAD_SIZE = get_max_upload_size()
 
 
@@ -183,10 +201,12 @@ def validate_uploaded_file(f, formats=RESUME_FORMATS, field_label="resume"):
 @permission_classes([AllowAny])
 @throttle_classes([SignupThrottle])
 def signup(request):
-    captcha_token = request.data.get("captcha_token") or request.data.get("captcha")
+    captcha_token = request.data.get(
+        "captcha_token") or request.data.get("captcha")
     if not verify_captcha_token(captcha_token):
         return Response(
-            {"captcha_token": ["CAPTCHA verification failed. Please complete the security challenge."]},
+            {"captcha_token": [
+                "CAPTCHA verification failed. Please complete the security challenge."]},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -240,8 +260,9 @@ def social_auth_view(request):
     import requests
 
     provider = (request.data.get("provider") or "").lower().strip()
-    token = request.data.get("token") or request.data.get("credential") or request.data.get("access_token") or request.data.get("code")
-    
+    token = request.data.get("token") or request.data.get(
+        "credential") or request.data.get("access_token") or request.data.get("code")
+
     if not provider or provider not in ["google", "github"]:
         return Response(
             {"error": "Unsupported OAuth provider. Supported providers are 'google' and 'github'."},
@@ -254,22 +275,26 @@ def social_auth_view(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    email = clean_text(request.data.get("email"), max_length=254) if request.data.get("email") else None
-    name = clean_text(request.data.get("name") or request.data.get("username"), max_length=150) if (request.data.get("name") or request.data.get("username")) else None
+    email = clean_text(request.data.get("email"),
+                       max_length=254) if request.data.get("email") else None
+    name = clean_text(request.data.get("name") or request.data.get("username"), max_length=150) if (
+        request.data.get("name") or request.data.get("username")) else None
     avatar_url = request.data.get("avatar_url")
 
     # If provider verification can be performed:
     if provider == "google":
         if token and token not in ["mock_token", "test_token"]:
             try:
-                resp = requests.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={token}", timeout=5)
+                resp = requests.get(
+                    f"https://oauth2.googleapis.com/tokeninfo?id_token={token}", timeout=5)
                 if resp.status_code == 200:
                     info = resp.json()
                     email = info.get("email", email)
                     name = info.get("name", name)
                     avatar_url = info.get("picture", avatar_url)
                 else:
-                    u_resp = requests.get("https://www.googleapis.com/oauth2/v3/userinfo", headers={"Authorization": f"Bearer {token}"}, timeout=5)
+                    u_resp = requests.get("https://www.googleapis.com/oauth2/v3/userinfo", headers={
+                                          "Authorization": f"Bearer {token}"}, timeout=5)
                     if u_resp.status_code == 200:
                         u_info = u_resp.json()
                         email = u_info.get("email", email)
@@ -280,14 +305,16 @@ def social_auth_view(request):
     elif provider == "github":
         if token and token not in ["mock_token", "test_token"]:
             try:
-                gh_resp = requests.get("https://api.github.com/user", headers={"Authorization": f"Bearer {token}", "Accept": "application/json"}, timeout=5)
+                gh_resp = requests.get("https://api.github.com/user", headers={
+                                       "Authorization": f"Bearer {token}", "Accept": "application/json"}, timeout=5)
                 if gh_resp.status_code == 200:
                     gh_info = gh_resp.json()
                     name = gh_info.get("login") or name
                     avatar_url = gh_info.get("avatar_url") or avatar_url
                     email = gh_info.get("email") or email
                     if not email:
-                        em_resp = requests.get("https://api.github.com/user/emails", headers={"Authorization": f"Bearer {token}", "Accept": "application/json"}, timeout=5)
+                        em_resp = requests.get("https://api.github.com/user/emails", headers={
+                                               "Authorization": f"Bearer {token}", "Accept": "application/json"}, timeout=5)
                         if em_resp.status_code == 200:
                             emails = em_resp.json()
                             for em in emails:
@@ -311,7 +338,8 @@ def social_auth_view(request):
 
     if not user:
         # Create new user
-        base_username = (name or (email.split("@")[0] if email else f"{provider}_user")).replace(" ", "_").lower()
+        base_username = (name or (email.split(
+            "@")[0] if email else f"{provider}_user")).replace(" ", "_").lower()
         candidate_username = base_username
         counter = 1
         while User.objects.filter(username__iexact=candidate_username).exists():
@@ -386,7 +414,6 @@ def social_auth_view(request):
         ),
     },
 )
-
 @api_view(["POST"])
 @parser_classes([MultiPartParser, FormParser, JSONParser])
 @permission_classes([AllowAny])
@@ -397,7 +424,8 @@ def upload_resume(request):
     url = request.data.get("url") or request.data.get("resume_url")
     target_role = clean_text(request.data.get("role"), max_length=100)
     experience_level = clean_text(
-        request.data.get("experience_level") or request.data.get("level") or "Mid-Level",
+        request.data.get("experience_level") or request.data.get(
+            "level") or "Mid-Level",
         max_length=50,
     )
     # `.get(key, "")` returns the stored value when the key is present, so a
@@ -575,6 +603,7 @@ def task_status(request, task_id):
 
     return Response({"state": task.state})
 
+
 @api_view(["POST"])
 @parser_classes([MultiPartParser, FormParser])
 @permission_classes([AllowAny])
@@ -584,7 +613,8 @@ def compare_uploads(request):
     file2 = request.FILES.get("file2")
     target_role = clean_text(request.data.get("role"), max_length=100)
     experience_level = clean_text(
-        request.data.get("experience_level") or request.data.get("level") or "Mid-Level",
+        request.data.get("experience_level") or request.data.get(
+            "level") or "Mid-Level",
         max_length=50,
     )
     job_desc = clean_text(
@@ -608,9 +638,9 @@ def compare_uploads(request):
         unique_name = f"{uuid.uuid4()}_{f.name}"
         saved_name = storage.save(unique_name, f)
         file_path = storage.path(saved_name)
-        
+
         user_id = request.user.id if request.user.is_authenticated else None
-        
+
         return analyze_resume(
             file_path=file_path,
             target_role=target_role,
@@ -628,7 +658,7 @@ def compare_uploads(request):
         from datetime import datetime
 
         MockResume = namedtuple('MockResume', [
-            'id', 'file_name', 'created_at', 'score', 
+            'id', 'file_name', 'created_at', 'score',
             'skills_found', 'matched_skills', 'missing_skills', 'resume_text'
         ])
 
@@ -655,8 +685,6 @@ def compare_uploads(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-from .serializers import ResumeAnalysisListSerializer
-
 #: Rows per page when the caller does not ask for a size.
 HISTORY_DEFAULT_PAGE_SIZE = 20
 
@@ -675,6 +703,7 @@ def _positive_int(raw, default, maximum=None):
     if maximum is not None:
         return min(value, maximum)
     return value
+
 
 @extend_schema(
     summary="Get analysis history",
@@ -713,7 +742,8 @@ def analysis_history(request):
         serializer = ResumeAnalysisListSerializer(analyses, many=True)
         return Response(serializer.data)
 
-    page_size = _positive_int(size_param, HISTORY_DEFAULT_PAGE_SIZE, HISTORY_MAX_PAGE_SIZE)
+    page_size = _positive_int(
+        size_param, HISTORY_DEFAULT_PAGE_SIZE, HISTORY_MAX_PAGE_SIZE)
     page_number = _positive_int(page_param, 1)
 
     total = analyses.count()
@@ -741,6 +771,7 @@ def analysis_history(request):
         }
     )
 
+
 @extend_schema(
     summary="Get analysis details",
     description="Returns a complete resume analysis.",
@@ -751,7 +782,6 @@ def analysis_history(request):
         ),
     },
 )
-
 @api_view(["GET", "DELETE"])
 @permission_classes([IsAuthenticated])
 def history_detail(request, pk):
@@ -784,6 +814,7 @@ def clear_user_history(request):
     # and HTTP clients treat as a protocol error.
     return Response(status=status.HTTP_204_NO_CONTENT)
 
+
 @extend_schema(
     summary="Compare two resume versions",
     description="Compares two previously analyzed resume versions.",
@@ -797,7 +828,6 @@ def clear_user_history(request):
         ),
     },
 )
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def compare_versions_view(request):
@@ -840,9 +870,6 @@ def compare_versions_view(request):
     return Response(serializer.data)
 
 
-from .models import SuggestionFeedback
-from .serializers import SuggestionFeedbackSerializer
-
 #: Keeps a stray paste from filling the column.
 MAX_FEEDBACK_COMMENT_LENGTH = 2000
 
@@ -871,13 +898,15 @@ def suggestion_feedback(request):
     ``DELETE`` withdraws a vote.
     """
     if request.method == "GET":
-        analysis = _owned_analysis(request, request.query_params.get("analysis_id"))
+        analysis = _owned_analysis(
+            request, request.query_params.get("analysis_id"))
         if analysis is None:
             return Response(
                 {"detail": "Analysis not found."}, status=status.HTTP_404_NOT_FOUND
             )
 
-        feedback = SuggestionFeedback.objects.filter(user=request.user, analysis=analysis)
+        feedback = SuggestionFeedback.objects.filter(
+            user=request.user, analysis=analysis)
         return Response({"results": SuggestionFeedbackSerializer(feedback, many=True).data})
 
     analysis_id = request.data.get("analysis_id")
@@ -918,10 +947,12 @@ def suggestion_feedback(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    comment = (request.data.get("comment") or "").strip()[:MAX_FEEDBACK_COMMENT_LENGTH]
+    comment = (request.data.get("comment") or "").strip()[
+        :MAX_FEEDBACK_COMMENT_LENGTH]
 
     feedback, created = SuggestionFeedback.objects.update_or_create(
-        defaults={"vote": vote, "comment": comment, "suggestion_text": suggestion_text},
+        defaults={"vote": vote, "comment": comment,
+                  "suggestion_text": suggestion_text},
         **lookup,
     )
 
@@ -933,6 +964,7 @@ def suggestion_feedback(request):
         },
         status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
     )
+
 
 class SharedResultThrottle(AnonRateThrottle):
     """Rate limit for the public share endpoint.
@@ -1030,7 +1062,8 @@ def manage_analysis_share(request, pk):
         analysis.revoke_sharing()
         return Response(ShareStateSerializer(analysis).data)
 
-    lifetime_days, was_clamped = clamp_lifetime_days(request.data.get("lifetime_days"))
+    lifetime_days, was_clamped = clamp_lifetime_days(
+        request.data.get("lifetime_days"))
     rotate = request.data.get("rotate") is True
 
     analysis.enable_sharing(lifetime_days=lifetime_days, rotate=rotate)
@@ -1042,6 +1075,7 @@ def manage_analysis_share(request, pk):
         # nothing has no way to know its link dies in one.
         payload["lifetime_clamped_to_days"] = lifetime_days
     return Response(payload)
+
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
@@ -1110,12 +1144,8 @@ def export_user_data(request):
     return response
 
 
-
 User = get_user_model()
 
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError as DjangoValidationError
-from rest_framework.throttling import AnonRateThrottle
 
 # `logger` was defined here, 500 lines below the top of the module and below
 # several of its own users. It now lives with the other module-level setup.
@@ -1147,7 +1177,8 @@ def build_password_reset_link(user):
     link used to point at ``http://localhost:5173`` no matter where the backend
     was deployed. The setting already exists and the weekly digest uses it.
     """
-    base = getattr(settings, "FRONTEND_URL", "http://localhost:5173").rstrip("/")
+    base = getattr(settings, "FRONTEND_URL",
+                   "http://localhost:5173").rstrip("/")
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
     return f"{base}/reset-password/{uid}/{token}/"
@@ -1166,7 +1197,8 @@ class PasswordResetRequestView(APIView):
         """
         username = (request.data.get("username") or "").strip()
 
-        user = User.objects.filter(username=username).first() if username else None
+        user = User.objects.filter(
+            username=username).first() if username else None
 
         if user is not None and user.email:
             reset_link = build_password_reset_link(user)
@@ -1258,27 +1290,27 @@ class PasswordResetConfirmView(APIView):
             status=status.HTTP_200_OK,
         )
 
-from collections import Counter
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def admin_stats_view(request):
     if not request.user.is_staff and not request.user.is_superuser:
         return Response({"error": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
-        
+
     total_analyses = ResumeAnalysis.objects.count()
-    
+
     # Most popular career tracks
     roles = ResumeAnalysis.objects.values_list('target_role', flat=True)
     popular_roles = Counter(roles).most_common(5)
-    
+
     # Most commonly missing skills
-    all_missing_skills = ResumeAnalysis.objects.values_list('missing_skills', flat=True)
+    all_missing_skills = ResumeAnalysis.objects.values_list(
+        'missing_skills', flat=True)
     missing_skills_counter = Counter()
     for skills_list in all_missing_skills:
         if isinstance(skills_list, list):
             missing_skills_counter.update(skills_list)
-            
+
     top_missing_skills = missing_skills_counter.most_common(10)
     return Response({
         "total_analyses": total_analyses,
@@ -1286,9 +1318,6 @@ def admin_stats_view(request):
         "top_missing_skills": [{"skill": s[0], "count": s[1]} for s in top_missing_skills if s[0]]
     })
 
-
-import re
-from collections import Counter
 
 STOP_WORDS = {
     "a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "aren't", "as", "at",
@@ -1308,6 +1337,7 @@ STOP_WORDS = {
     "looking", "ability", "using", "candidate", "development", "knowledge", "working", "strong", "position", "years"
 }
 
+
 @api_view(["POST"])
 @permission_classes([AllowAny])
 @throttle_classes([AnalyzeJdThrottle])
@@ -1320,34 +1350,35 @@ def analyze_jd_view(request):
     )
     if not job_description:
         return Response({"error": "Job description cannot be empty."}, status=status.HTTP_400_BAD_REQUEST)
-        
+
     words = re.findall(r"\b[a-zA-Z0-9\-\.\#\+\-]+\b", job_description.lower())
     filtered_words = [w for w in words if w not in STOP_WORDS and len(w) >= 2]
-    
+
     counter = Counter(filtered_words)
     top_items = counter.most_common(30)
-    
+
     from analyzer.services import get_role_skills
     all_skills = set()
     for skills_list in get_role_skills().values():
         for s in skills_list:
             all_skills.add(s.lower())
-            
+
     results = []
     for word, count in top_items:
-        is_skill = (word in all_skills) or (word.title() in all_skills) or (word.upper() in all_skills)
+        is_skill = (word in all_skills) or (
+            word.title() in all_skills) or (word.upper() in all_skills)
         if not is_skill:
             for s in all_skills:
                 if s == word or (len(word) > 3 and word in s):
                     is_skill = True
                     break
-                    
+
         results.append({
             "text": word,
             "value": count,
             "type": "skill" if is_skill else "general"
         })
-        
+
     return Response({"keywords": results}, status=status.HTTP_200_OK)
 
 
@@ -1380,8 +1411,10 @@ class SkillsLeaderboardThrottle(AnonRateThrottle):
         "counts each skill once per person rather than once per analysis."
     ),
     parameters=[
-        OpenApiParameter("track", OpenApiTypes.STR, description="Career track to filter to."),
-        OpenApiParameter("limit", OpenApiTypes.INT, description="Skills per list (1-50)."),
+        OpenApiParameter("track", OpenApiTypes.STR,
+                         description="Career track to filter to."),
+        OpenApiParameter("limit", OpenApiTypes.INT,
+                         description="Skills per list (1-50)."),
         OpenApiParameter(
             "per_user",
             OpenApiTypes.BOOL,
@@ -1422,7 +1455,8 @@ def skills_leaderboard_view(request):
     known_tracks = set(get_role_skills().keys())
     track = normalise_track(request.query_params.get("track"), known_tracks)
     limit = clamp_limit(request.query_params.get("limit"))
-    per_user = str(request.query_params.get("per_user", "")).lower() in ("1", "true", "yes")
+    per_user = str(request.query_params.get("per_user", "")
+                   ).lower() in ("1", "true", "yes")
 
     cache_key = cache_key_for(track, limit, per_user)
     cached_data = cache.get(cache_key)
@@ -1457,9 +1491,6 @@ def skills_leaderboard_view(request):
     return Response(response_data, status=status.HTTP_200_OK)
 
 
-from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import CustomTokenObtainPairSerializer
-
 @extend_schema(
     summary="Authenticate user",
     description=(
@@ -1487,17 +1518,16 @@ from .serializers import CustomTokenObtainPairSerializer
         ),
     ],
 )
-
-
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
 
 @api_view(["POST", "DELETE"])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
 def profile_avatar_view(request):
     profile, _ = UserProfile.objects.get_or_create(user=request.user)
-    
+
     if request.method == "POST":
         file_obj = request.FILES.get("avatar")
         if not file_obj:
@@ -1511,20 +1541,19 @@ def profile_avatar_view(request):
         if file_obj.size > max_size:
             return Response({"error": "Image size must be under 2MB."}, status=status.HTTP_400_BAD_REQUEST)
 
-
         if profile.avatar:
             try:
                 if os.path.exists(profile.avatar.path):
                     os.remove(profile.avatar.path)
             except Exception:
                 pass
-                
+
         profile.avatar = file_obj
         profile.save()
-        
+
         avatar_url = request.build_absolute_uri(profile.avatar.url)
         return Response({"avatar_url": avatar_url}, status=status.HTTP_200_OK)
-        
+
     elif request.method == "DELETE":
         if profile.avatar:
             try:
@@ -1534,7 +1563,7 @@ def profile_avatar_view(request):
                 pass
             profile.avatar = None
             profile.save()
-            
+
         return Response({"message": "Avatar removed successfully."}, status=status.HTTP_200_OK)
 
 
@@ -1545,7 +1574,7 @@ def profile_avatar_view(request):
 def compare_bulk_jds_view(request):
     file = request.FILES.get("file")
     url = request.data.get("url") or request.data.get("resume_url")
-    
+
     # Try parsing job descriptions from JSON string or list parameter
     jds_raw = request.data.get("job_descriptions")
     job_descriptions = []
@@ -1559,7 +1588,8 @@ def compare_bulk_jds_view(request):
             elif isinstance(jds_raw, list):
                 job_descriptions = jds_raw
     else:
-        job_descriptions = request.data.getlist("job_descriptions") or request.data.getlist("job_descriptions[]")
+        job_descriptions = request.data.getlist(
+            "job_descriptions") or request.data.getlist("job_descriptions[]")
 
     if not file and not url:
         return Response(
@@ -1574,7 +1604,8 @@ def compare_bulk_jds_view(request):
             return Response({"error": str(ve)}, status=status.HTTP_400_BAD_REQUEST)
 
     # limit up to 5 JDs
-    job_descriptions = [jd.strip() for jd in job_descriptions if jd and jd.strip()][:5]
+    job_descriptions = [jd.strip()
+                        for jd in job_descriptions if jd and jd.strip()][:5]
     if not job_descriptions:
         return Response(
             {"error": "Please provide at least one non-empty job description."},
@@ -1646,6 +1677,7 @@ def compare_bulk_jds_view(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
+
 @extend_schema(
     summary="Get or update user profile",
     description=(
@@ -1666,7 +1698,8 @@ def user_profile_view(request):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     elif request.method == "PUT":
-        serializer = UserProfileSerializer(user, data=request.data, context={"request": request}, partial=True)
+        serializer = UserProfileSerializer(user, data=request.data, context={
+                                           "request": request}, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -1698,8 +1731,10 @@ def contact_us_view(request):
     It is now throttled, its fields are bounded, and the address is checked to
     be an address.
     """
-    name = clean_text(request.data.get("name"), max_length=MAX_CONTACT_NAME_LENGTH)
-    email = clean_text(request.data.get("email"), max_length=MAX_CONTACT_EMAIL_LENGTH)
+    name = clean_text(request.data.get("name"),
+                      max_length=MAX_CONTACT_NAME_LENGTH)
+    email = clean_text(request.data.get("email"),
+                       max_length=MAX_CONTACT_EMAIL_LENGTH)
     subject = clean_text(
         request.data.get("subject"), max_length=MAX_CONTACT_SUBJECT_LENGTH
     )
@@ -1726,14 +1761,16 @@ def contact_us_view(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    support_email = getattr(settings, "SUPPORT_EMAIL", "support@ai-resume-analyzer.dev")
+    support_email = getattr(settings, "SUPPORT_EMAIL",
+                            "support@ai-resume-analyzer.dev")
     email_body = f"Support Message Received:\n\nFrom: {name} ({email})\nCategory: {category}\nSubject: {subject}\n\nMessage:\n{message}"
 
     try:
         send_mail(
             subject=f"[Support - {category}] {subject if subject else 'New Inquiry'}",
             message=email_body,
-            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@ai-resume-analyzer.dev"),
+            from_email=getattr(settings, "DEFAULT_FROM_EMAIL",
+                               "noreply@ai-resume-analyzer.dev"),
             recipient_list=[support_email],
             # Was fail_silently=True, so a mail backend that was down looked
             # exactly like a delivered message: the user was told "your message
@@ -1761,8 +1798,6 @@ def contact_us_view(request):
         status=status.HTTP_200_OK,
     )
 
-
-from .unsubscribe_tokens import read_unsubscribe_token
 
 UNSUBSCRIBE_SUCCESS_MESSAGE = (
     "You have successfully unsubscribed from the weekly resume-tips email digest."
@@ -1872,10 +1907,6 @@ def mock_interview_view(request):
     }, status=status.HTTP_200_OK)
 
 
-
-
-from .serializers import WebhookSerializer
-
 #: How many webhooks one account may register. A webhook is an outbound request
 #: we make on the user's behalf, so an unbounded list is an unbounded amount of
 #: work per analysis.
@@ -1916,7 +1947,8 @@ def manage_webhooks(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    serializer = WebhookSerializer(data=request.data, context={"request": request})
+    serializer = WebhookSerializer(
+        data=request.data, context={"request": request})
     if not serializer.is_valid():
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -2032,9 +2064,7 @@ def test_webhook(request, pk):
 
 
 # New Device / Location Login Email Alerts Helper Functions
-import requests
-from django.core.mail import send_mail
-from django.utils import timezone
+
 
 def get_client_ip(request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -2043,6 +2073,7 @@ def get_client_ip(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
     return ip
+
 
 def parse_user_agent(ua_string):
     if not ua_string:
@@ -2074,6 +2105,7 @@ def parse_user_agent(ua_string):
 
     return f"{browser_name} on {os_name}"
 
+
 def get_approximate_location(ip):
     if not ip or ip in ('127.0.0.1', '::1'):
         return "Localhost (Development)"
@@ -2091,6 +2123,7 @@ def get_approximate_location(ip):
     except Exception:
         pass
     return "Approximate Location"
+
 
 def send_new_device_login_alert(user, ip, device_info):
     if not user.email:
@@ -2115,20 +2148,12 @@ def send_new_device_login_alert(user, ip, device_info):
     send_mail(
         subject=subject,
         message=message,
-        from_email=getattr(settings, "DEFAULT_FROM_EMAIL", "noreply@ai-resume-analyzer.dev"),
+        from_email=getattr(settings, "DEFAULT_FROM_EMAIL",
+                           "noreply@ai-resume-analyzer.dev"),
         recipient_list=[user.email],
         fail_silently=False,
     )
 
-from .models import BatchUpload
-from .tasks import process_batch_upload
-from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.permissions import AllowAny
-from rest_framework.decorators import parser_classes
-from django.core.files.storage import FileSystemStorage
-from django.conf import settings
-import uuid
-import os
 
 @api_view(["POST"])
 @parser_classes([MultiPartParser, FormParser])
@@ -2138,9 +2163,11 @@ def upload_batch_resumes(request):
     if not file or not file.name.endswith(".zip"):
         return Response({"error": "Please provide a valid .zip file."}, status=status.HTTP_400_BAD_REQUEST)
 
-    target_role = clean_text(request.data.get("role") or "General", max_length=100)
+    target_role = clean_text(request.data.get(
+        "role") or "General", max_length=100)
     experience_level = clean_text(
-        request.data.get("experience_level") or request.data.get("level") or "Mid-Level",
+        request.data.get("experience_level") or request.data.get(
+            "level") or "Mid-Level",
         max_length=50,
     )
     job_desc = clean_text(
@@ -2149,7 +2176,7 @@ def upload_batch_resumes(request):
     )
 
     user = request.user if request.user.is_authenticated else None
-    
+
     batch = BatchUpload.objects.create(
         user=user,
         status="Pending"
@@ -2171,6 +2198,7 @@ def upload_batch_resumes(request):
     )
 
     return Response({"batch_id": batch.id})
+
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
