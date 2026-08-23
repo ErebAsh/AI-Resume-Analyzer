@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useLocation, Link } from 'react-router-dom'
+import { useLocation, Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import './index.css'
 import { AtsScore } from './AtsScore'
@@ -127,6 +127,7 @@ function ResumePreview({ text, skills }: { text: string; skills: string[] }) {
 
 function App() {
   const location = useLocation()
+  const navigate = useNavigate()
   const [theme, setTheme] = useState<Theme>(getInitialTheme)
   const [loading, setLoading] = useState(false)
   const [file, setFile] = useState<File | null>(null)
@@ -1389,13 +1390,27 @@ function App() {
                 })}
 
                 {/* Reset Button */}
-                <div style={{ marginTop: '24px', textAlign: 'center' }}>
+                <div style={{ marginTop: '24px', textAlign: 'center', display: 'flex', justifyContent: 'center', gap: '10px' }}>
                   <button
                     type="button"
                     className="app-btn app-btn--secondary"
                     onClick={resetAnalysis}
                   >
                     🔄 Start New Analysis
+                  </button>
+                  <button
+                    type="button"
+                    className="app-btn"
+                    style={{ backgroundColor: '#10b981', color: 'white' }}
+                    onClick={() => {
+                      navigate('/builder', { 
+                        state: { 
+                          resumeData: { name: '', email: '', phone: '', skills: skills, experience: [], education: [] } 
+                        } 
+                      })
+                    }}
+                  >
+                    ✏️ Edit & Export PDF
                   </button>
                 </div>
               </div>

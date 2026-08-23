@@ -32,6 +32,7 @@ from .views import (
     manage_webhooks,
     webhook_detail,
     test_webhook,
+    export_pdf_view,
 )
 
 urlpatterns = [
@@ -40,6 +41,7 @@ urlpatterns = [
     path("mock-interview/", mock_interview_view),
     path("compare-uploads/", compare_uploads),
     path("analyze-jd/", analyze_jd_view),
+    path("export-pdf/", export_pdf_view, name="export_pdf"),
     path("compare-bulk-jds/", compare_bulk_jds_view),
     path("profile/", user_profile_view),
     # `profile_avatar_view` was imported here but never given a path, so the

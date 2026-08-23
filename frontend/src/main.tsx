@@ -50,6 +50,7 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 import { Routes, Route } from 'react-router-dom'
 import { TermsOfService } from './pages/TermsOfService'
 import { ProfilePage } from './components/ProfilePage'
+import { BuilderPage } from './pages/Builder/BuilderPage'
 
 
 createRoot(document.getElementById('root')!).render(
@@ -59,6 +60,7 @@ createRoot(document.getElementById('root')!).render(
         <Routes>
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/*" element={<App />} />
+          <Route path="/builder" element={<BuilderPage />} />
           <Route path="/docs" element={<ApiDocs />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Routes>
