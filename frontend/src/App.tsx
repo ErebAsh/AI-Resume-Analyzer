@@ -29,21 +29,7 @@ import { WhatsNewModal } from './components/WhatsNewModal'
 import { shouldShowWhatsNew } from './data/whatsNewReleases'
 import { ShareResult } from './components/ShareResult'
 import { setResumeRoastConsent } from './utils/cookieConsent'
-
-type Theme = 'light' | 'dark'
-
-function getInitialTheme(): Theme {
-  try {
-    const saved = localStorage.getItem('theme')
-    if (saved === 'light' || saved === 'dark') return saved
-    if (typeof window !== 'undefined' && window.matchMedia) {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-    }
-  } catch {
-    // localStorage / matchMedia can throw in restricted privacy modes
-  }
-  return 'light'
-}
+import { useTheme } from './theme/ThemeContext'
 
 function highlightSkills(text: string, skills: string[]): React.ReactNode[] {
   if (!text) return []
@@ -128,7 +114,7 @@ function ResumePreview({ text, skills }: { text: string; skills: string[] }) {
 
 function App() {
   const location = useLocation()
-  const [theme, setTheme] = useState<Theme>(getInitialTheme)
+  const { theme, toggleTheme } = useTheme()
   const [loading, setLoading] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -323,6 +309,7 @@ function App() {
   // }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (user) fetchDbHistory()
   }, [user, fetchDbHistory])
 
@@ -343,15 +330,6 @@ function App() {
     }
   }, [targetRole])
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    try {
-      localStorage.setItem('theme', theme)
-    } catch {
-      // persistence is best-effort; ignore if storage is unavailable
-    }
-  }, [theme])
-
   // Cooldown timer effect
   useEffect(() => {
     if (cooldownRemaining > 0) {
@@ -361,10 +339,6 @@ function App() {
       return () => clearTimeout(timer)
     }
   }, [cooldownRemaining])
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
-  }
 
   const getRetryDelay = (attemptNumber: number): number => {
     // Exponential backoff: 2^attemptNumber seconds, capped at 30 seconds

@@ -2,8 +2,10 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import App from './App'
-
 describe('Job Description Draft Auto-Save (#533)', () => {
+  vi.mock('./theme/ThemeContext', () => ({
+    useTheme: () => ({ theme: 'light', toggleTheme: vi.fn() }),
+  }))
   beforeEach(() => {
     localStorage.clear()
     vi.useFakeTimers()

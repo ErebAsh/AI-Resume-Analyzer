@@ -80,6 +80,7 @@ def build_automaton():
     A.make_automaton()
     return A
 
+
 AUTOMATON = build_automaton()
 
 
@@ -157,7 +158,7 @@ def extract_skills(text: str):
     # end_index is inclusive.
     for end_index, (alias_lower, canonical) in AUTOMATON.iter(normalized):
         start_index = end_index - len(alias_lower) + 1
-        
+
         # Match complete words only to prevent false positives (e.g. react in reactive)
         if is_word_boundary(normalized, start_index, end_index + 1):
             detected.append(canonical)
@@ -238,7 +239,8 @@ def match_skills_with_partial(required_skills, text, detected_skills=None):
         if matched_aliases_in_text:
             variant = matched_aliases_in_text[0]
             if not is_explicit_non_match(req_lower, variant):
-                variant_display = variant.upper() if variant in ("js", "ts", "css", "html", "sql") else variant.title()
+                variant_display = variant.upper() if variant in (
+                    "js", "ts", "css", "html", "sql") else variant.title()
                 partial_info = {
                     "skill": req_clean,
                     "matched_variant": variant_display,
@@ -280,9 +282,10 @@ def match_skills_with_partial(required_skills, text, detected_skills=None):
                             "note": f"Resume mentions '{det.title()}' (formatting variant of '{req_clean}')"
                         }
                         break
-                    
+
                     # High similarity ratio
-                    ratio = difflib.SequenceMatcher(None, req_alpha, det_alpha).ratio()
+                    ratio = difflib.SequenceMatcher(
+                        None, req_alpha, det_alpha).ratio()
                     if ratio >= 0.82:
                         partial_info = {
                             "skill": req_clean,
@@ -293,7 +296,8 @@ def match_skills_with_partial(required_skills, text, detected_skills=None):
 
         # (d) Fallback check raw text for formatting variants (e.g. "React.js" when req is "React")
         if not partial_info and len(req_clean) >= 3:
-            possible_variants = [f"{req_lower}.js", f"{req_lower}js", f"{req_lower} css", f"{req_lower} framework"]
+            possible_variants = [
+                f"{req_lower}.js", f"{req_lower}js", f"{req_lower} css", f"{req_lower} framework"]
             for pv in possible_variants:
                 if is_word_in_text(pv, normalized_text) and not is_explicit_non_match(req_lower, pv):
                     partial_info = {
@@ -308,4 +312,4 @@ def match_skills_with_partial(required_skills, text, detected_skills=None):
         else:
             missing.append(req_clean)
 
-    return matched, partial, missing
+    return matched, partial, missing

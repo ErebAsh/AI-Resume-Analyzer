@@ -63,8 +63,10 @@ const ANALYSIS_RESULT = {
   missing_skills: ['Python'],
   resume_text: 'Sample Resume Content',
 }
-
 describe('Resume Roast Mode (#497)', () => {
+  vi.mock('./theme/ThemeContext', () => ({
+    useTheme: () => ({ theme: 'light', toggleTheme: vi.fn() }),
+  }))
   beforeEach(() => {
     // "Try Sample Resume" does `fetch('/sample-resume.pdf')`. Under jsdom there
     // is no origin to resolve a root-relative path against, so the real fetch

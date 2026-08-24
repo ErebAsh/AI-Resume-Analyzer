@@ -49,6 +49,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onAva
       const res = await api.post('/api/profile/avatar/', formData)
       onAvatarUpdated(res.data.avatar_url)
       setSuccess('Profile picture updated successfully!')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error(err)
       setError(err.response?.data?.error || 'Failed to upload profile picture.')
@@ -66,6 +67,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onAva
       await api.delete('/api/profile/avatar/')
       onAvatarUpdated(null)
       setSuccess('Profile picture removed.')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error(err)
       setError(err.response?.data?.error || 'Failed to remove profile picture.')

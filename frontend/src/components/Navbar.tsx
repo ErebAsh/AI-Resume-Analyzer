@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import type { AuthUser } from '../hooks/useAuth'
 import { Link, useLocation } from 'react-router-dom'
+import { useTheme } from '../theme/ThemeContext'
 
 interface NavbarProps {
-  theme: 'light' | 'dark'
-  toggleTheme: () => void
   user: AuthUser | null
   onLogin: () => void
   onLogout: () => void
@@ -13,14 +12,8 @@ interface NavbarProps {
 
 const MOBILE_BREAKPOINT = 1024
 
-export const Navbar: React.FC<NavbarProps> = ({
-  theme,
-  toggleTheme,
-  user,
-  onLogin,
-  onLogout,
-  onProfileClick,
-}) => {
+export const Navbar: React.FC<NavbarProps> = ({ user, onLogin, onLogout, onProfileClick }) => {
+  const { theme, toggleTheme } = useTheme()
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
   const [activeSection, setActiveSection] = useState<'home' | 'ats'>('home')

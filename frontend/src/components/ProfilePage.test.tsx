@@ -180,7 +180,11 @@ describe('ProfilePage', () => {
       weekly_digest_opt_in: true,
     })
 
-    await waitFor(() => expect(screen.getByText('Profile and notification preferences updated successfully!')).toBeInTheDocument())
+    await waitFor(() =>
+      expect(
+        screen.getByText('Profile and notification preferences updated successfully!')
+      ).toBeInTheDocument()
+    )
     expect(screen.getByDisplayValue('updateduser')).toBeInTheDocument()
     expect(screen.getByDisplayValue('updated@example.com')).toBeInTheDocument()
     expect(mockUpdateProfileSession).toHaveBeenCalledWith('updateduser')

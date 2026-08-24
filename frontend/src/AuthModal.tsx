@@ -11,6 +11,7 @@ interface AuthModalProps {
     rememberMe: boolean,
     captchaToken?: string
   ) => Promise<void>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onOAuthLogin?: (provider: 'google' | 'github', payload?: any) => Promise<void>
   onClose: () => void
 }
@@ -76,6 +77,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       await axios.post(`${backendUrl}/api/auth/resend-verification/`, { email: unverifiedEmail })
       setResendStatus('success')
       setResendMessage('Verification email has been resent successfully!')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setResendStatus('error')
       setResendMessage(
@@ -113,6 +115,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         await axios.post(`${backendUrl}/api/password-reset/`, { username })
         onClose()
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       let msg = 'Authentication failed'
       let emailVal = ''

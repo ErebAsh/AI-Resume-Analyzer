@@ -7,6 +7,7 @@ import {
 } from '../utils/actionPlanUtils'
 import { ListChecks, Download, FileText, CheckCircle2, TrendingUp, Sparkles } from 'lucide-react'
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface ActionPlanChecklistProps extends ActionPlanParams {}
 
 export const ActionPlanChecklist: React.FC<ActionPlanChecklistProps> = (props) => {

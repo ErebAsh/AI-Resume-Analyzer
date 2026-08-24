@@ -69,6 +69,7 @@ export const ProfilePage: React.FC = () => {
         setResumeRoastConsentState(consentPrefs.resumeRoast)
         setOriginalAnalyticsConsent(consentPrefs.analytics)
         setOriginalResumeRoastConsent(consentPrefs.resumeRoast)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         setError(err.response?.data?.error || 'Failed to load profile details.')
       } finally {
@@ -99,6 +100,7 @@ export const ProfilePage: React.FC = () => {
       setSuccessMsg(null)
       await exportUserData()
       setSuccessMsg('Your account data has been downloaded successfully.')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setError(err.response?.data?.error || err.message || 'Failed to export your data.')
     } finally {
@@ -180,6 +182,7 @@ export const ProfilePage: React.FC = () => {
       updateProfileSession(updated.username)
       setSuccessMsg('Profile and notification preferences updated successfully!')
       setIsEditing(false)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       if (err.response?.data) {
         const errors = err.response.data

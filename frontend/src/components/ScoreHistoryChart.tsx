@@ -16,6 +16,7 @@ interface ScoreHistoryChartProps {
 
 interface CustomTooltipProps {
   active?: boolean
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload?: any[]
 }
 

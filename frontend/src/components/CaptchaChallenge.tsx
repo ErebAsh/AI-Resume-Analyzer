@@ -23,6 +23,7 @@ export const CaptchaChallenge: React.FC<CaptchaChallengeProps> = ({ onVerify }) 
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     generateChallenge()
   }, [])
 

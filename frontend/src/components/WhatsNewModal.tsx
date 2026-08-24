@@ -18,11 +18,13 @@ export const WhatsNewModal: React.FC<WhatsNewModalProps> = ({
     if (!isOpen) return
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        // eslint-disable-next-line react-hooks/immutability
         handleDismiss()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, release.version])
 
   if (!isOpen) return null
