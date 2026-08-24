@@ -63,7 +63,7 @@ export const DragDropBatchZone: React.FC<DragDropBatchZoneProps> = ({ onUploadSt
         headers['Authorization'] = `Bearer ${token}`;
       }
       
-      const response = await fetch('/api/analyzer/batch-upload/', {
+      const response = await fetch('/api/batch-upload/', {
         method: 'POST',
         body: formData,
         headers,

@@ -41,8 +41,10 @@ from .badge_views import manage_resume_badge, resume_score_badge
 
 urlpatterns = [
     path("upload/", upload_resume),
+    path("batch-upload/", upload_batch_resumes),
     path("import-jd-url/", import_jd_url_view),
     path("status/<str:task_id>/", task_status),
+    path("batch-status/<str:batch_id>/", batch_status),
     path("mock-interview/", mock_interview_view),
     path("compare-uploads/", compare_uploads),
     path("analyze-jd/", analyze_jd_view),
