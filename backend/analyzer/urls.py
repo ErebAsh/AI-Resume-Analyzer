@@ -96,6 +96,9 @@ urlpatterns = [
     path("auth/oauth/", social_auth_view, name="social_auth"),
     path("auth/refresh/", TokenRefreshView.as_view()),
 
+    path("dashboard/", UserDashboardViewSet.as_view({'get': 'list'}), name='dashboard_list'),
+    path("dashboard/<int:pk>/", UserDashboardViewSet.as_view({'get': 'retrieve', 'delete': 'destroy'}), name='dashboard_detail'),
+
     path("history/", analysis_history),
     path("history/clear/", clear_user_history),
     path("history/<int:pk>/", history_detail),

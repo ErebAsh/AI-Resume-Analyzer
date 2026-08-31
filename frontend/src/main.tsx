@@ -3,16 +3,17 @@ import { createRoot } from 'react-dom/client'
 import * as Sentry from '@sentry/react'
 import './index.css'
 import App from './App.tsx'
+import { ThemeProvider } from './theme/ThemeContext.tsx'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import ErrorBoundary from './components/ErrorBoundary'
 import { BrowserRouter } from 'react-router-dom'
-import ApiDocs from "./pages/Apidocs";
-
+import ApiDocs from './pages/Apidocs'
 
 if (import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN,
     integrations: [],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     beforeSend(event: any) {
       // Redact sensitive data from the event payload
       if (event.request && event.request.data) {
@@ -55,7 +56,6 @@ import { RecruiterDashboard } from './pages/Recruiter/RecruiterDashboard'
 import { ResumeVersionHistory } from './components/ResumeVersionHistory'
 import { ATSCompatibilityScanner } from './components/ATSCompatibilityScanner'
 import { ContributorCertificate } from './components/ContributorCertificate'
-
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
