@@ -34,7 +34,10 @@ from .views import (
     manage_webhooks,
     webhook_detail,
     test_webhook,
-    preview_experience_level_view,
+    UserDashboardViewSet,
+    upload_batch_resumes,
+    batch_status,
+    import_jd_url_view,
 )
 from . import career_roadmap
 from .badge_views import manage_resume_badge, resume_score_badge
@@ -69,8 +72,9 @@ from .contributor_views import ContributorCertificateView
 
 urlpatterns = [
     path("upload/", upload_resume),
-    path("job-board/suggest/", suggest_roles, name="suggest_roles"),
-    path("preview-level/", preview_experience_level_view),
+    path("batch-upload/", upload_batch_resumes),
+    path("batch-status/<str:task_id>/", batch_status),
+    path("import-jd-url/", import_jd_url_view),
     path("status/<str:task_id>/", task_status),
     path("mock-interview/", mock_interview_view),
     path("compare-uploads/", compare_uploads),
@@ -90,6 +94,9 @@ urlpatterns = [
     path("auth/login/", CustomTokenObtainPairView.as_view()),
     path("auth/oauth/", social_auth_view, name="social_auth"),
     path("auth/refresh/", TokenRefreshView.as_view()),
+
+    path("dashboard/", UserDashboardViewSet.as_view({'get': 'list'}), name='dashboard_list'),
+    path("dashboard/<int:pk>/", UserDashboardViewSet.as_view({'get': 'retrieve', 'delete': 'destroy'}), name='dashboard_detail'),
 
     path("history/", analysis_history),
     path("history/clear/", clear_user_history),
