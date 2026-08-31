@@ -5,7 +5,7 @@ import './index.css'
 import App from './App.tsx'
 import 'bootstrap/dist/css/bootstrap.min.css'
 import ErrorBoundary from './components/ErrorBoundary'
-import {  BrowserRouter } from 'react-router-dom'
+import { BrowserRouter } from 'react-router-dom'
 import ApiDocs from "./pages/Apidocs";
 
 
@@ -52,6 +52,9 @@ import { TermsOfService } from './pages/TermsOfService'
 import { ProfilePage } from './components/ProfilePage'
 import { BuilderPage } from './pages/Builder/BuilderPage'
 import { RecruiterDashboard } from './pages/Recruiter/RecruiterDashboard'
+import { ResumeVersionHistory } from './components/ResumeVersionHistory'
+import { ATSCompatibilityScanner } from './components/ATSCompatibilityScanner'
+import { ContributorCertificate } from './components/ContributorCertificate'
 
 
 createRoot(document.getElementById('root')!).render(
@@ -65,6 +68,12 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/builder" element={<BuilderPage />} />
           <Route path="/docs" element={<ApiDocs />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/career-roadmap" element={<CareerRoadmap />} />
+          <Route path="/skill-gap" element={<SkillGapAnalyzer />} />
+          <Route path="/version-history" element={<ResumeVersionHistory />} />
+          <Route path="/ats-scanner" element={<ATSCompatibilityScanner />} />
+          <Route path="/contributors" element={<ContributorCertificate />} />
+          <Route path="/contributor-certificate" element={<ContributorCertificate />} />
         </Routes>
       </BrowserRouter>
     </ErrorBoundary>

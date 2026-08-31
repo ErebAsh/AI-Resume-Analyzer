@@ -160,8 +160,10 @@ def verify_captcha_token(token_string):
 
 
 from .file_validation import (
+    AVATAR_FORMATS,
     PDF,
     RESUME_FORMATS,
+    UploadValidationError,
     detect_format,
     get_max_upload_size,
     validate_optional_upload,
@@ -191,10 +193,22 @@ def validate_uploaded_file(f, formats=RESUME_FORMATS, field_label="resume"):
     return True
 
 
+from .abuse_detection import check_signup_abuse
+
 @api_view(["POST"])
 @permission_classes([AllowAny])
 @throttle_classes([SignupThrottle])
 def signup(request):
+    ip_address = get_client_ip(request)
+    user_agent = request.META.get('HTTP_USER_AGENT', '')
+    
+    is_allowed, reason = check_signup_abuse(ip_address, user_agent)
+    if not is_allowed:
+        return Response(
+            {"detail": "Too many signup attempts from this IP. Please try again later."},
+            status=status.HTTP_429_TOO_MANY_REQUESTS,
+        )
+
     captcha_token = request.data.get("captcha_token") or request.data.get("captcha")
     if not verify_captcha_token(captcha_token):
         return Response(
@@ -212,6 +226,37 @@ def signup(request):
         )
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(
+    summary="Check real-time username/email availability",
+    description="Checks if a given username or email address is available during signup.",
+    parameters=[
+        OpenApiParameter(name="field", type=str, location=OpenApiParameter.QUERY, description="Field to check: 'username' or 'email'"),
+        OpenApiParameter(name="value", type=str, location=OpenApiParameter.QUERY, description="The username or email value to check"),
+    ],
+    responses={
+        200: OpenApiResponse(description="Returns availability status for the requested field"),
+    },
+)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def check_availability(request):
+    field = request.GET.get("field", "").strip().lower()
+    value = request.GET.get("value", "").strip()
+
+    if not value or field not in ("username", "email"):
+        return Response({"isAvailable": True, "field": field}, status=status.HTTP_200_OK)
+
+    User = get_user_model()
+    if field == "username":
+        is_available = not User.objects.filter(username__iexact=value).exists()
+    elif field == "email":
+        is_available = not User.objects.filter(email__iexact=value).exists()
+    else:
+        is_available = True
+
+    return Response({"isAvailable": is_available, "field": field}, status=status.HTTP_200_OK)
 
 
 @extend_schema(
@@ -398,6 +443,87 @@ def social_auth_view(request):
         ),
     },
 )
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def preview_experience_level_view(request):
+    analysis_id = request.data.get("analysis_id")
+    resume_text = request.data.get("resume_text", "")
+    target_role = request.data.get("target_role", "")
+    experience_level = request.data.get("experience_level", "Mid-Level")
+    job_description = request.data.get("job_description", "")
+
+    if analysis_id:
+        try:
+            analysis = ResumeAnalysis.objects.get(id=analysis_id)
+            resume_text = analysis.resume_text or ""
+            target_role = analysis.target_role or ""
+            job_description = analysis.job_description or ""
+        except ResumeAnalysis.DoesNotExist:
+            return Response({"error": "Analysis not found"}, status=404)
+
+    if not resume_text:
+        return Response({"error": "resume_text is required"}, status=400)
+    if not target_role:
+        return Response({"error": "target_role is required"}, status=400)
+
+    # 1. Extract skills from resume
+    from .skill_matcher import extract_skills
+    detected = extract_skills(resume_text)
+
+    # 2. Get required skills
+    matched = []
+    missing = []
+    if job_description and job_description.strip():
+        required = extract_skills(job_description)
+    else:
+        from .services import get_role_skills_for_level
+        required = get_role_skills_for_level(target_role, experience_level)
+
+    for skill in required:
+        if skill in detected:
+            matched.append(skill)
+        else:
+            missing.append(skill)
+
+    # 3. Calculate score
+    score = (
+        int(len(matched) / len(required) * 100)
+        if required
+        else min(len(detected) * 10, 100)
+    )
+
+    # 4. Suggestions
+    from .services import generate_level_tailored_suggestions
+    suggestions = generate_level_tailored_suggestions(missing, experience_level, target_role)
+
+    # 5. Readability & Quantify
+    from .services import calculate_readability
+    from resume_analyzer.quantify_checker import flag_unquantified_bullets
+    readability_score, readability_label = calculate_readability(resume_text)
+    quantify_nudges = flag_unquantified_bullets(resume_text.split('\n'))
+
+    # 6. Score breakdown
+    from .scoring import compute_score_breakdown
+    score_breakdown = compute_score_breakdown(
+        text=resume_text,
+        matched_skills=matched,
+        required_skills=required,
+        detected_skills=detected,
+        readability_score=readability_score,
+        readability_label=readability_label,
+        quantify_nudges=quantify_nudges,
+    )
+
+    return Response({
+        "score": score,
+        "score_breakdown": score_breakdown.as_dict(),
+        "matched_skills": matched,
+        "missing_skills": missing,
+        "suggestions": suggestions,
+        "experience_level": experience_level,
+    })
+
 
 @api_view(["POST"])
 @parser_classes([MultiPartParser, FormParser, JSONParser])
@@ -1087,6 +1213,7 @@ def export_user_data(request):
             ),
             "weekly_digest_opt_in": profile.weekly_digest_opt_in,
             "avatar": profile.avatar.name if profile.avatar else None,
+            "bio": profile.bio or "",
         },
         "analysis_history": [
             {
@@ -1551,13 +1678,15 @@ def profile_avatar_view(request):
         if not file_obj:
             return Response({"error": "No avatar file provided."}, status=status.HTTP_400_BAD_REQUEST)
 
-        ext = os.path.splitext(file_obj.name)[1].lower()
-        if ext not in [".png", ".jpg", ".jpeg", ".webp"]:
-            return Response({"error": "Only PNG, JPG, JPEG, and WEBP images are allowed."}, status=status.HTTP_400_BAD_REQUEST)
-
-        max_size = 2 * 1024 * 1024
-        if file_obj.size > max_size:
-            return Response({"error": "Image size must be under 2MB."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            validate_upload(
+                file_obj,
+                formats=AVATAR_FORMATS,
+                field_label="avatar",
+                max_size=2 * 1024 * 1024,
+            )
+        except UploadValidationError as error:
+            return Response({"error": str(error)}, status=status.HTTP_400_BAD_REQUEST)
 
 
         if profile.avatar:
@@ -1693,6 +1822,106 @@ def compare_bulk_jds_view(request):
             {"error": str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+@extend_schema(
+    summary="Bulk resume analysis across multiple files",
+    description="Uploads and analyzes multiple resumes in one session against a target role and optional job description, returning a summary list with individual scores and detailed analysis results.",
+)
+@api_view(["POST"])
+@parser_classes([MultiPartParser, FormParser])
+@permission_classes([AllowAny])
+@throttle_classes([UploadRateThrottle])
+def compare_bulk_resumes_view(request):
+    files = request.FILES.getlist("files") or request.FILES.getlist("files[]") or request.FILES.getlist("resumes")
+    if not files and request.FILES.get("file"):
+        files = [request.FILES.get("file")]
+
+    if not files:
+        return Response(
+            {"error": "Please provide at least one resume file to analyze."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Allow up to 10 resumes in bulk session
+    files = files[:10]
+    target_role = clean_text(request.data.get("role") or request.data.get("target_role") or "Frontend Developer", max_length=100)
+    experience_level = clean_text(
+        request.data.get("experience_level") or request.data.get("level") or "Mid-Level",
+        max_length=50,
+    )
+    job_desc = clean_text(
+        request.data.get("job_description"),
+        max_length=MAX_STORED_JOB_DESCRIPTION_LENGTH,
+    )
+
+    # Validate each uploaded file
+    for f in files:
+        try:
+            validate_upload(f, field_label=f"resume '{f.name}'")
+        except ValueError as ve:
+            return Response({"error": str(ve)}, status=status.HTTP_400_BAD_REQUEST)
+
+    user_id = request.user.id if request.user.is_authenticated else None
+
+    results = []
+    temp_dir = os.path.join(settings.BASE_DIR, "tmp")
+    os.makedirs(temp_dir, exist_ok=True)
+    storage = FileSystemStorage(location=temp_dir)
+
+    for index, uploaded_file in enumerate(files):
+        unique_name = f"{uuid.uuid4()}_{uploaded_file.name}"
+        saved_name = storage.save(unique_name, uploaded_file)
+        file_path = storage.path(saved_name)
+
+        try:
+            analysis = analyze_resume(
+                file_path=file_path,
+                target_role=target_role,
+                file_name=uploaded_file.name,
+                user_id=user_id,
+                job_description=job_desc,
+                experience_level=experience_level,
+            )
+            results.append({
+                "index": index,
+                "file_name": uploaded_file.name,
+                "score": analysis.get("score", 0),
+                "matched_skills": analysis.get("matched_skills", []),
+                "missing_skills": analysis.get("missing_skills", []),
+                "partial_skills": analysis.get("partial_skills", []),
+                "skills_found": analysis.get("skills_found", []),
+                "suggestions": analysis.get("suggestions", []),
+                "readability_score": analysis.get("readability_score"),
+                "readability_label": analysis.get("readability_label"),
+                "score_breakdown": analysis.get("score_breakdown"),
+                "target_role": target_role,
+                "experience_level": experience_level,
+            })
+        except Exception as err:
+            results.append({
+                "index": index,
+                "file_name": uploaded_file.name,
+                "score": 0,
+                "error": str(err),
+                "matched_skills": [],
+                "missing_skills": [],
+                "partial_skills": [],
+                "skills_found": [],
+                "suggestions": [f"Could not analyze file: {err}"],
+                "target_role": target_role,
+                "experience_level": experience_level,
+            })
+
+    # Sort results by score descending for recruiter summary view
+    results.sort(key=lambda x: x.get("score", 0), reverse=True)
+
+    return Response({
+        "target_role": target_role,
+        "experience_level": experience_level,
+        "total_resumes": len(results),
+        "resumes": results,
+    }, status=status.HTTP_200_OK)
 
 @extend_schema(
     summary="Get or update user profile",

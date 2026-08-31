@@ -2,6 +2,7 @@ import secrets
 import uuid
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
@@ -68,6 +69,10 @@ class ResumeAnalysis(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "-created_at", "-id"]),
+            models.Index(fields=["target_role"]),
+        ]
 
     def __str__(self):
         return f"{self.user.username} — {self.file_name} ({self.score}%)"
@@ -179,6 +184,12 @@ class BatchUpload(models.Model):
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     avatar = models.FileField(upload_to="avatars/", blank=True, null=True)
+    bio = models.CharField(
+        max_length=250,
+        blank=True,
+        default="",
+        help_text="Short bio or professional headline.",
+    )
     weekly_digest_opt_in = models.BooleanField(default=False)
     notification_preferences = models.JSONField(
         default=dict,
@@ -381,3 +392,58 @@ def invalidate_role_skills_cache(sender, **kwargs):
 @receiver(m2m_changed, sender=Role.skills.through)
 def invalidate_m2m_cache(sender, **kwargs):
     cache.delete("role_skills_dict")
+
+
+class ApplicationLog(models.Model):
+    """
+    Model to track job applications and their outcomes for A/B testing resume versions.
+    """
+    STATUS_CHOICES = [
+        ('applied', 'Applied'),
+        ('screening', 'Screening'),
+        ('interviewed', 'Interviewed'),
+        ('rejected', 'Rejected'),
+        ('offered', 'Offered'),
+    ]
+    
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='application_logs')
+    resume_analysis = models.ForeignKey('ResumeAnalysis', on_delete=models.SET_NULL, null=True, related_name='application_logs')
+    company_name = models.CharField(max_length=255)
+    job_title = models.CharField(max_length=255)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='applied')
+    applied_date = models.DateField(auto_now_add=True)
+    notes = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['-applied_date']
+        verbose_name = 'Application Log'
+        verbose_name_plural = 'Application Logs'
+
+    def __str__(self):
+        return f"{self.job_title} at {self.company_name} - {self.status}"
+
+
+class SignupAbuseEvent(models.Model):
+    """
+    Records an instance where an IP address exceeded the signup rate limit threshold.
+    Useful for maintainers to audit potential abuse, such as bot registrations.
+    """
+    STATUS_CHOICES = [
+        ('flagged', 'Flagged'),
+        ('throttled', 'Throttled'),
+        ('reviewed', 'Reviewed'),
+    ]
+
+    ip_address = models.GenericIPAddressField(db_index=True)
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+    signup_count = models.IntegerField(help_text="Number of signups in the time window")
+    window_minutes = models.IntegerField(help_text="The time window in minutes")
+    user_agent = models.TextField(blank=True, help_text="The user agent of the last request")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='flagged')
+    notes = models.TextField(blank=True, help_text="Maintainer notes")
+
+    class Meta:
+        ordering = ["-timestamp"]
+
+    def __str__(self):
+        return f"{self.ip_address} - {self.status} at {self.timestamp}"

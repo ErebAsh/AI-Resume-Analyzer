@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../hooks/useAuth'
 import { getConsentPreferences, saveConsentPreferences } from '../utils/cookieConsent'
 import { requestNotificationPermission, saveNotificationPreferences } from '../utils/notification'
+
+const MAX_BIO_LENGTH = 250
 
 type NotificationPreferences = { in_app: boolean; browser: boolean }
 const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = { in_app: true, browser: false }
@@ -11,6 +14,7 @@ export const ProfilePage: React.FC = () => {
   const { user, updateProfileSession, exportUserData } = useAuth()
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
+  const [bio, setBio] = useState('')
   const [weeklyDigestOptIn, setWeeklyDigestOptIn] = useState(false)
   const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>(DEFAULT_NOTIFICATION_PREFERENCES)
   const [analyticsConsent, setAnalyticsConsentState] = useState<boolean>(() => getConsentPreferences().analytics)
@@ -19,6 +23,7 @@ export const ProfilePage: React.FC = () => {
 
   const [originalUsername, setOriginalUsername] = useState('')
   const [originalEmail, setOriginalEmail] = useState('')
+  const [originalBio, setOriginalBio] = useState('')
   const [originalOptIn, setOriginalOptIn] = useState(false)
   const [originalNotificationPreferences, setOriginalNotificationPreferences] = useState<NotificationPreferences>(DEFAULT_NOTIFICATION_PREFERENCES)
   const [originalAnalyticsConsent, setOriginalAnalyticsConsent] = useState<boolean>(() => getConsentPreferences().analytics)
@@ -45,11 +50,13 @@ export const ProfilePage: React.FC = () => {
         }
         setUsername(data.username)
         setEmail(data.email || '')
+        setBio(data.bio || data.headline || '')
         setWeeklyDigestOptIn(!!data.weekly_digest_opt_in)
         setNotificationPreferences(prefs)
         saveNotificationPreferences(prefs)
         setOriginalUsername(data.username)
         setOriginalEmail(data.email || '')
+        setOriginalBio(data.bio || data.headline || '')
         setOriginalOptIn(!!data.weekly_digest_opt_in)
         setOriginalNotificationPreferences(prefs)
 
@@ -71,6 +78,7 @@ export const ProfilePage: React.FC = () => {
   const handleCancel = () => {
     setUsername(originalUsername)
     setEmail(originalEmail)
+    setBio(originalBio)
     setWeeklyDigestOptIn(originalOptIn)
     setNotificationPreferences(originalNotificationPreferences)
     saveNotificationPreferences(originalNotificationPreferences)
@@ -127,6 +135,13 @@ export const ProfilePage: React.FC = () => {
       return
     }
 
+    // Basic content sanitization on the client: strip HTML tags and trim excessive whitespace
+    const sanitizedBio = bio.replace(/<[^>]*>?/gm, '').trim()
+    if (sanitizedBio.length > MAX_BIO_LENGTH) {
+      setError(`Bio / headline cannot exceed ${MAX_BIO_LENGTH} characters.`)
+      return
+    }
+
     try {
       setSaving(true)
       setError(null)
@@ -135,6 +150,7 @@ export const ProfilePage: React.FC = () => {
       const response = await api.put('/api/profile/', {
         username,
         email,
+        bio: sanitizedBio,
         weekly_digest_opt_in: weeklyDigestOptIn,
         notification_preferences: notificationPreferences,
       })
@@ -146,11 +162,13 @@ export const ProfilePage: React.FC = () => {
       }
       setUsername(updated.username)
       setEmail(updated.email)
+      setBio(updated.bio || updated.headline || '')
       setWeeklyDigestOptIn(!!updated.weekly_digest_opt_in)
       setNotificationPreferences(savedPrefs)
       saveNotificationPreferences(savedPrefs)
       setOriginalUsername(updated.username)
       setOriginalEmail(updated.email)
+      setOriginalBio(updated.bio || updated.headline || '')
       setOriginalOptIn(!!updated.weekly_digest_opt_in)
       setOriginalNotificationPreferences(savedPrefs)
 
@@ -171,6 +189,8 @@ export const ProfilePage: React.FC = () => {
           setError(Array.isArray(errors.username) ? errors.username[0] : errors.username)
         } else if (errors.email) {
           setError(Array.isArray(errors.email) ? errors.email[0] : errors.email)
+        } else if (errors.bio) {
+          setError(Array.isArray(errors.bio) ? errors.bio[0] : errors.bio)
         } else {
           setError(errors.error || 'Failed to update profile details.')
         }
@@ -270,6 +290,44 @@ export const ProfilePage: React.FC = () => {
               <input id="profile-email" name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={!isEditing || saving} style={{ padding: '10px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--control-border)', background: isEditing ? 'var(--control-bg)' : 'var(--upload-bg)', color: 'var(--control-text)', fontSize: '0.95rem', outline: 'none', transition: 'border-color 0.2s ease', cursor: isEditing ? 'text' : 'not-allowed' }} />
             </div>
 
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label htmlFor="profile-bio" style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--heading-text)' }}>
+                  Bio / Headline
+                </label>
+                <span style={{ fontSize: '0.75rem', color: bio.length > MAX_BIO_LENGTH ? 'var(--color-danger)' : 'var(--muted-text)' }}>
+                  {bio.length} / {MAX_BIO_LENGTH} characters
+                </span>
+              </div>
+              <textarea
+                id="profile-bio"
+                name="bio"
+                rows={3}
+                maxLength={MAX_BIO_LENGTH}
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                disabled={!isEditing || saving}
+                placeholder={isEditing ? "e.g. Senior Full-Stack Engineer | Open Source Contributor | Cloud & AI" : "No bio added yet."}
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--control-border)',
+                  background: isEditing ? 'var(--control-bg)' : 'var(--upload-bg)',
+                  color: 'var(--control-text)',
+                  fontSize: '0.95rem',
+                  outline: 'none',
+                  resize: 'vertical',
+                  minHeight: '70px',
+                  fontFamily: 'inherit',
+                  transition: 'border-color 0.2s ease',
+                  cursor: isEditing ? 'text' : 'not-allowed',
+                }}
+              />
+              <span style={{ fontSize: '0.75rem', color: 'var(--muted-text)' }}>
+                A short bio or headline summarizing your professional background and goals.
+              </span>
+            </div>
+
             <div style={{ borderTop: '1px solid var(--surface-border)', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
                 <h2 style={{ fontSize: '1.1rem', margin: 0, color: 'var(--heading-text)' }}>🔔 Notification Preferences</h2>
@@ -300,6 +358,19 @@ export const ProfilePage: React.FC = () => {
               <div className="form-check form-switch" style={{ margin: 0, paddingLeft: '2.5em' }}>
                 <input id="profile-roast-toggle" className="form-check-input" type="checkbox" role="switch" checked={resumeRoastConsent} onChange={(e) => setResumeRoastConsentState(e.target.checked)} disabled={!isEditing || saving} style={{ width: '2.2em', height: '1.2em', cursor: isEditing ? 'pointer' : 'not-allowed' }} />
               </div>
+            </div>
+
+            {/* Contributor Recognition Banner (#181, #963) */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(245, 158, 11, 0.3)', background: 'rgba(245, 158, 11, 0.05)', gap: '16px' }}>
+              <div>
+                <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#fef08a', display: 'block' }}>🎖️ Open Source Contributor?</span>
+                <span style={{ fontSize: '0.8rem', color: 'var(--muted-text)', display: 'block', marginTop: '2px' }}>
+                  Have you contributed code, features, or bug fixes to AI Resume Analyzer? Generate and download your official Certificate of Contribution.
+                </span>
+              </div>
+              <Link to="/contributors" className="app-btn app-btn--secondary" style={{ flexShrink: 0, textDecoration: 'none', fontSize: '0.85rem', padding: '8px 14px', borderColor: 'rgba(245, 158, 11, 0.4)', color: '#fbbf24' }}>
+                Claim Certificate →
+              </Link>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px', borderTop: '1px solid var(--surface-border)', paddingTop: '20px' }}>

@@ -253,17 +253,21 @@ class VersionComparisonSerializer(serializers.Serializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True, allow_blank=False)
+    bio = serializers.CharField(required=False, allow_blank=True, max_length=250, default="")
+    headline = serializers.CharField(required=False, allow_blank=True, max_length=250, write_only=True)
     weekly_digest_opt_in = serializers.BooleanField(required=False, default=False)
     notification_preferences = serializers.JSONField(required=False)
 
     class Meta:
         model = User
-        fields = ("username", "email", "weekly_digest_opt_in", "notification_preferences")
+        fields = ("username", "email", "bio", "headline", "weekly_digest_opt_in", "notification_preferences")
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
         profile, _ = UserProfile.objects.get_or_create(user=instance)
         prefs = profile.notification_preferences or {}
+        ret["bio"] = profile.bio or ""
+        ret["headline"] = profile.bio or ""
         ret["weekly_digest_opt_in"] = profile.weekly_digest_opt_in
         ret["notification_preferences"] = {
             "in_app": prefs.get("in_app", True),
@@ -271,12 +275,39 @@ class UserProfileSerializer(serializers.ModelSerializer):
         }
         return ret
 
+    def validate_bio(self, value):
+        if not value:
+            return ""
+        import html
+        import re
+        from django.utils.html import strip_tags
+
+        # Basic content sanitization: strip HTML tags and unescape entities
+        cleaned = strip_tags(value)
+        cleaned = strip_tags(html.unescape(cleaned))
+        # Normalize whitespace (replace newlines/tabs with space and collapse spaces)
+        cleaned = re.sub(r'[\r\n\t]+', ' ', cleaned)
+        cleaned = re.sub(r' +', ' ', cleaned).strip()
+        if len(cleaned) > 250:
+            raise serializers.ValidationError("Bio/headline cannot exceed 250 characters.")
+        return cleaned
+
+    def validate_headline(self, value):
+        return self.validate_bio(value)
+
     def update(self, instance, validated_data):
+        bio = validated_data.pop("bio", None)
+        headline = validated_data.pop("headline", None)
+        if bio is None and headline is not None:
+            bio = headline
         weekly_digest_opt_in = validated_data.pop("weekly_digest_opt_in", None)
         notification_preferences = validated_data.pop("notification_preferences", None)
         user = super().update(instance, validated_data)
         profile, _ = UserProfile.objects.get_or_create(user=user)
         changed = False
+        if bio is not None:
+            profile.bio = bio
+            changed = True
         if weekly_digest_opt_in is not None:
             profile.weekly_digest_opt_in = weekly_digest_opt_in
             changed = True
