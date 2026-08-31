@@ -59,6 +59,43 @@
 
 ---
 
+## 🌐 Browser Compatibility
+
+### Supported Browsers
+
+| Browser | Version | Status | Notes |
+|---------|---------|--------|-------|
+| Chrome | 90+ | ✅ Fully Supported | Best performance |
+| Firefox | 88+ | ✅ Fully Supported | Slight UI differences |
+| Edge | 90+ | ✅ Fully Supported | Chromium-based |
+| Safari | 14+ | ✅ Supported | Some CSS limitations |
+| Opera | 76+ | ⚠️ Partial | Minor UI issues |
+| Brave | 1.20+ | ✅ Fully Supported | Chromium-based |
+
+### Mobile Support
+
+| Browser | Version | Status |
+|---------|---------|--------|
+| Chrome Mobile | 90+ | ✅ Supported |
+| Safari Mobile | 14+ | ✅ Supported |
+| Samsung Internet | 15+ | ✅ Supported |
+
+### Minimum Requirements
+- JavaScript: ES6+
+- Cookies: Enabled
+- Local Storage: Enabled
+- Screen: 1024x768 min
+- Internet: 2 Mbps min
+
+### Known Limitations
+- Safari: PDF preview may not render correctly (🔄 In Progress)
+- Firefox: Drag-and-drop upload has minor delay (✅ Fixed in v1.2)
+- Opera: Keyboard shortcuts conflict (⚠️ Known Issue)
+
+> Full details: [BROWSER_COMPATIBILITY.md](docs/BROWSER_COMPATIBILITY.md)
+
+---
+
 ## Project Preview/ Screenshots
 
 ### 🏠 Home Page
